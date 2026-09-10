@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f8a5f">
+<title>WHU二手书市</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- 顶部栏（登录后显示） -->
+  <header id="topbar" class="hidden">
+    <div id="topbar-title">WHU二手书市</div>
+    <button id="bell" class="hidden" onclick="go('#/notifications')">🔔<span id="bell-badge" class="badge hidden"></span></button>
+  </header>
+
+  <!-- 视图容器 -->
+  <main id="view"></main>
+
+  <!-- 底部 Tab（登录后显示） -->
+  <nav id="tabbar" class="hidden">
+    <a data-r="#/browse" onclick="go('#/browse')"><i>📚</i><span>书市</span></a>
+    <a data-r="#/sell" onclick="go('#/sell')"><i>📤</i><span>卖书</span></a>
+    <a data-r="#/inbox" onclick="go('#/inbox')"><i>💬</i><span>消息</span><span id="tab-msg-badge" class="badge hidden"></span></a>
+    <a data-r="#/invite" onclick="go('#/invite')"><i>🎁</i><span>邀请</span></a>
+    <a data-r="#/me" onclick="go('#/me')"><i>👤</i><span>我的</span></a>
+  </nav>
+
+  <!-- 全局提示 -->
+  <div id="toast" class="hidden"></div>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

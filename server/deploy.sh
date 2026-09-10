@@ -50,7 +50,7 @@ echo "目标 : $SSH_TARGET  目录: $REMOTE_DIR"
 TMP_TGZ="$(mktemp -u).tgz"
 tar czf "$TMP_TGZ" --exclude=node_modules --exclude='data.db' --exclude='data.db-wal' \
   --exclude='data.db-shm' --exclude=uploads --exclude='*.log' \
-  src admin config.json package.json package-lock.json
+  src admin web config.json package.json package-lock.json
 scp -q "$TMP_TGZ" "$SSH_TARGET:/tmp/lele-deploy.tgz"
 rm -f "$TMP_TGZ"
 

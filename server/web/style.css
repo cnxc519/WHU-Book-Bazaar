@@ -1,0 +1,156 @@
+/* WHU二手书市 网页版：移动端优先，品牌绿 #0f8a5f */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: #f4f6f7; color: #2a3238; font-size: 14px;
+  max-width: 520px; margin: 0 auto; min-height: 100vh;
+  display: flex; flex-direction: column;
+}
+#app { display: flex; flex-direction: column; min-height: 100vh; }
+.hidden { display: none !important; }
+button { font-family: inherit; cursor: pointer; border: none; }
+input, select, textarea { font-family: inherit; font-size: 14px; }
+
+/* 顶部栏 */
+#topbar {
+  background: linear-gradient(135deg, #0f8a5f, #16a06f); color: #fff;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 10;
+}
+#topbar-title { font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+#bell { background: none; color: #fff; font-size: 20px; position: relative; }
+.badge {
+  position: absolute; top: -6px; right: -10px;
+  background: #e74c3c; color: #fff; font-size: 10px; font-style: normal;
+  min-width: 16px; height: 16px; line-height: 16px; border-radius: 8px;
+  padding: 0 4px; text-align: center; font-weight: 700;
+}
+#tabbar { position: relative; }
+#tabbar a {
+  position: relative; flex: 1; text-align: center; text-decoration: none;
+  color: #9aa3a8; font-size: 10px; padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+}
+#tabbar a i { display: block; font-style: normal; font-size: 20px; margin-bottom: 1px; }
+#tabbar a.on { color: #0f8a5f; font-weight: 700; }
+
+/* 视图区 */
+#view { flex: 1; padding: 12px; padding-bottom: 76px; }
+#view.flush { padding: 0; padding-bottom: 60px; }
+.card {
+  background: #fff; border-radius: 14px; padding: 14px;
+  margin-bottom: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.05);
+}
+h2.sec { font-size: 15px; margin: 4px 2px 10px; }
+.muted { color: #98a1a8; font-size: 12px; }
+.sub { color: #5a6570; font-size: 12px; }
+
+/* 表单 */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; color: #5a6570; margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 11px 12px; border: 1px solid #dfe3e6;
+  border-radius: 10px; background: #fff; color: #2a3238;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  outline: none; border-color: #16a06f; box-shadow: 0 0 0 2px rgba(22,160,111,.12);
+}
+.btn {
+  display: block; width: 100%; padding: 13px 0; border-radius: 12px;
+  background: linear-gradient(135deg, #12a06d, #0d8a5f); color: #fff;
+  font-size: 16px; font-weight: 700; border: none;
+}
+.btn:disabled { opacity: .55; }
+.btn.ghost { background: #fff; color: #5a6570; border: 1px solid #dfe3e6; font-weight: 500; }
+.btn.danger { background: #fbeeec; color: #c0392b; font-weight: 600; }
+.btn.small { width: auto; padding: 7px 14px; font-size: 13px; border-radius: 9px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row .grow { flex: 1; }
+
+/* chips */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 7px 14px; border-radius: 16px; background: #f0f1f3;
+  color: #5a6570; font-size: 12px; border: none;
+}
+.chip.on { background: #0f8a5f; color: #fff; font-weight: 600; }
+.chip.small { padding: 4px 10px; font-size: 11px; border-radius: 12px; }
+
+/* 书列表卡片 */
+.book-card {
+  display: flex; gap: 12px; background: #fff; border-radius: 14px;
+  padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  cursor: pointer;
+}
+.cover {
+  width: 72px; height: 92px; border-radius: 10px; object-fit: cover; flex-shrink: 0;
+  background: #eff3fa; display: flex; align-items: center; justify-content: center;
+  font-size: 30px; color: #b9c4d4;
+}
+.bc-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bc-title { font-size: 15px; font-weight: 700; color: #2a3238; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.bc-note { color: #5a6570; font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc-meta { color: #98a1a8; font-size: 11px; margin-top: auto; padding-top: 4px; }
+.bc-price { font-size: 16px; font-weight: 800; color: #0f8a5f; white-space: nowrap; }
+.bc-price.small { font-size: 12px; }
+.tag { display: inline-block; background: #e6f5ee; color: #0f8a5f; border-radius: 10px; padding: 2px 9px; font-size: 11px; margin-right: 5px; }
+.tag.gray { background: #eef0f3; color: #9aa3a8; }
+.tag.red { background: #fbeeec; color: #c0392b; }
+
+/* 详情页 */
+.detail-cover { width: 100%; border-radius: 14px; background: #eff3fa; display: flex; align-items: center; justify-content: center; font-size: 60px; color: #b9c4d4; overflow: hidden; }
+.detail-cover img { width: 100%; object-fit: contain; }
+.d-title { font-size: 20px; font-weight: 800; margin: 12px 2px 6px; }
+.d-price { color: #0f8a5f; font-weight: 800; }
+.d-price.big { font-size: 22px; }
+.d-note { font-size: 14px; line-height: 1.6; color: #0f8a5f; font-weight: 600; }
+.seller-card { display: flex; align-items: center; gap: 12px; }
+.avatar { width: 46px; height: 46px; border-radius: 23px; background: #0f8a5f; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; overflow: hidden; }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 聊天 */
+.chat-wrap { display: flex; flex-direction: column; height: calc(100vh - 110px); }
+.chat-list { flex: 1; overflow-y: auto; padding: 4px 2px; }
+.msg { display: flex; margin-bottom: 10px; }
+.msg.me { justify-content: flex-end; }
+.bubble {
+  max-width: 76%; padding: 9px 12px; border-radius: 14px;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  font-size: 14px; line-height: 1.5; word-break: break-word; white-space: pre-wrap;
+}
+.msg.me .bubble { background: #0f8a5f; color: #fff; }
+.bubble.sys { background: transparent; box-shadow: none; color: #98a1a8; font-size: 12px; text-align: center; max-width: 100%; }
+.chat-input { display: flex; gap: 8px; padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); position: sticky; bottom: 0; background: #f4f6f7; }
+.chat-input input { flex: 1; padding: 11px 14px; border-radius: 21px; border: 1px solid #dfe3e6; background: #fff; }
+.chat-input button { width: 74px; border-radius: 21px; background: #0f8a5f; color: #fff; font-weight: 700; }
+
+/* 会话列表 */
+.chat-row { display: flex; gap: 10px; background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.05); cursor: pointer; align-items: center; }
+.chat-row .cover { width: 46px; height: 58px; font-size: 22px; }
+.cr-body { flex: 1; min-width: 0; }
+.cr-name { font-weight: 700; font-size: 14px; }
+.cr-last { color: #98a1a8; font-size: 12px; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 通知 */
+.notif-card { background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+
+/* 上传封面框 */
+.up-box {
+  width: 96px; height: 120px; border-radius: 10px; border: 1px dashed #c6ced4;
+  background: #f0f1f3; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: #9aa3a8; font-size: 12px; overflow: hidden; flex-shrink: 0;
+}
+.up-box img { width: 100%; height: 100%; object-fit: cover; }
+
+/* toast */
+#toast {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: 96px; z-index: 99; max-width: 80%;
+  background: rgba(0,0,0,.78); color: #fff; border-radius: 10px;
+  padding: 10px 16px; font-size: 13px; text-align: center; line-height: 1.5;
+}
+.empty { text-align: center; color: #98a1a8; padding: 60px 20px; }
+.empty .big { font-size: 44px; margin-bottom: 10px; }
+.linkish { color: #0f8a5f; font-weight: 600; cursor: pointer; }
+.center { text-align: center; }

@@ -17,6 +17,9 @@ app.use((req, res, next) => {
 });
 app.use(express.json({ limit: '128kb' }));
 
+// 网页版（移动端优先的 SPA，复用同一套 API）：根路径直达
+app.use(express.static(path.join(__dirname, '..', 'web')));
+
 // 静态资源：头像 / 书籍封面（APK 不允许公开直链下载，见下方 /dl/apk）
 // 拦截必须放在 express.static 之前，否则静态服务会先命中并直接回包
 app.use('/files/apk', (req, res) => res.status(404).json({ ok: false, error: { code: 'NOT_FOUND', msg: '接口不存在' } }));
