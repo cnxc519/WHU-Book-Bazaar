@@ -54,7 +54,9 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 #view.flush { padding: 12px 14px 90px; }
 
 /* 顶栏下第一张卡上叠效果 */
-#view .overlap { margin-top: -34px; position: relative; z-index: 5; }
+#view .overlap { margin-top: -30px; position: relative; z-index: 5; padding-top: 42px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.row .grow { flex: 1; min-width: 0; }
 
 /* ---------- 卡片 ---------- */
 .card {
