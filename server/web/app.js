@@ -169,7 +169,7 @@ function vLogin() {
   $('#view').innerHTML = `
     <div style="background:radial-gradient(circle at 85% -20%,rgba(255,255,255,.15) 0 70px,transparent 71px),linear-gradient(135deg,#0d7a54,#12a06f);color:#fff;border-radius:0 0 26px 26px;margin:-12px -14px 18px;padding:42px 26px 60px">
       <div style="font-size:30px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:12px">
-        <img src="/appicon.png" style="width:40px;height:40px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.2)">WHU二手书市</div>
+        <img src="/appicon.png" style="width:46px;height:46px">WHU二手书市</div>
       <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 好书流转一个学期</div>
     </div>
     <div class="card overlap">
@@ -462,13 +462,13 @@ function singleFormHtml() {
       <button class="chip" data-v="3">有笔记划线</button><button class="chip" data-v="4">使用痕迹较多</button></div></div>
     <div class="field"><label>期望价格（必填，0.01-999.99 元）</label><input id="s-price" placeholder="如 15"></div>
     <div class="field"><label>交易地点（必填）</label><input id="s-loc" placeholder="当面交书的地点"></div>
-    <div class="field"><label>课程（选填）</label><input id="s-course" placeholder="例如：大学英语"></div>
-    <div class="field"><label>补充说明（选填，≤300 字）</label><textarea id="s-note" rows="2" placeholder="重点笔记齐全，无缺页等"></textarea></div>
-    <div class="field"><label>封面照（选填一张，自动压缩）</label>
+    <div class="field"><label>选填项（课程 · 说明 · 封面照片）<button class="chip small" style="float:right" id="s-extra-toggle">${coverImg ? '收起选填项 ▲' : '展开选填项 ▼'}</button></label><div id="s-extra" style="display:${coverImg ? 'block' : 'none'}">
+      <input id="s-course" placeholder="对应课程（选填），例如：大学英语" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:10px">
+      <textarea id="s-note" rows="2" placeholder="补充说明（选填，≤300 字），例如：重点笔记齐全，无缺页" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:10px"></textarea>
       <div class="row"><div class="up-box" id="s-upbox" onclick="$('#s-file').click()">${coverImg ? `<img src="${coverImg}">` : '📷<br>加封面'}</div>
       <div class="grow sub">拍清书名与封面更醒目</div></div>
       <input type="file" id="s-file" accept="image/*" class="hidden">
-    </div>
+    </div></div>
     <button class="btn" id="s-go">发布到书市</button>`;
 }
 let sellCond = '';
@@ -478,10 +478,20 @@ function bindSingle() {
     sellCond = c.dataset.v;
     document.querySelectorAll('#s-cond .chip').forEach((x) => x.classList.toggle('on', x === c));
   });
+  $('#s-extra-toggle').onclick = () => {
+    const box = $('#s-extra');
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : 'block';
+    $('#s-extra-toggle').textContent = open ? '展开选填项 ▼' : '收起选填项 ▲';
+  };
   $('#s-file').onchange = async (e) => {
     const f = e.target.files[0];
     if (!f) return;
-    try { coverImg = await compressImage(f, 800, 200); $('#s-upbox').innerHTML = `<img src="${coverImg}">`; } catch (err) { toast(err.message); }
+    try {
+      coverImg = await compressImage(f, 800, 200);
+      $('#s-upbox').innerHTML = `<img src="${coverImg}">`;
+      $('#s-extra-toggle').textContent = '收起选填项 ▲';
+    } catch (err) { toast(err.message); }
   };
   $('#s-go').onclick = async () => {
     const title = $('#s-title').value.trim();

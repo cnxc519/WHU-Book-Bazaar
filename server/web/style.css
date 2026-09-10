@@ -36,9 +36,8 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 }
 #topbar-title { font-size: 19px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 9px; }
 #topbar-title::before {
-  content: ''; width: 26px; height: 26px; border-radius: 8px;
-  background: #fff url('/appicon.png') center/cover;
-  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  content: ''; width: 34px; height: 34px;
+  background: url('/appicon.png') center/contain no-repeat;
 }
 #bell { background: none; color: #fff; font-size: 21px; position: relative; padding: 4px; }
 .badge {
