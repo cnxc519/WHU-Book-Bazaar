@@ -135,6 +135,16 @@ function go(hash) { location.hash = hash; }
 // 必须手动 render —— 登录成功后曾因此卡在登录页（URL 已变视图未变）
 function navTo(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
+// 摆放示例灯箱：展示标准摆拍照片，点击任意处关闭
+function showExample(ev) {
+  ev?.stopPropagation();
+  const ov = document.createElement('div');
+  ov.className = 'img-overlay';
+  ov.innerHTML = `<div class="img-box"><img src="/example-books.jpg" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">像这样把书竖直排开、书名朝外拍一张 ↑ 点击任意处关闭</div></div>`;
+  ov.onclick = () => ov.remove();
+  document.body.appendChild(ov);
+}
+
 function render() {
   let hash = location.hash || '#/browse';
   const logged = isLogin();
@@ -159,7 +169,7 @@ function vLogin() {
   $('#view').innerHTML = `
     <div style="background:radial-gradient(circle at 85% -20%,rgba(255,255,255,.15) 0 70px,transparent 71px),linear-gradient(135deg,#0d7a54,#12a06f);color:#fff;border-radius:0 0 26px 26px;margin:-12px -14px 18px;padding:42px 26px 60px">
       <div style="font-size:30px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:12px">
-        <span style="display:inline-block;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#fff,#d8efe4);box-shadow:inset 0 0 0 9px #0d7a54,0 3px 10px rgba(0,0,0,.2)"></span>WHU二手书市</div>
+        <img src="/appicon.png" style="width:40px;height:40px;border-radius:12px;box-shadow:0 3px 10px rgba(0,0,0,.2)">WHU二手书市</div>
       <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 好书流转一个学期</div>
     </div>
     <div class="card overlap">
@@ -371,7 +381,7 @@ function batchFormHtml() {
     <div class="row" style="align-items:flex-start">
       <div class="up-box" id="up-box" onclick="$('#sell-file').click()">${sellImg ? `<img src="${sellImg}">` : '📷<br>拍合照'}</div>
       <div class="grow">
-        <div class="sub" style="line-height:1.6;margin-bottom:8px">把要卖的书放一起拍一张，尽量让每个书名都拍清晰。这张照片会同时作为每本书的封面，AI 识别约需 20 秒。</div>
+        <div class="sub" style="line-height:1.6;margin-bottom:8px">把要卖的书放一起拍一张，尽量让每个书名都拍清晰。这张照片会同时作为每本书的封面，AI 识别约需 20 秒。不知道怎么摆？看<span class="linkish" onclick="showExample(event)">示例图片</span>。</div>
         <button class="btn small ${sellImg ? '' : 'ghost'}" id="ai-btn">🤖 AI 识别书名</button>
       </div>
     </div>
