@@ -7,7 +7,7 @@ import "js/ui.js" as Ui
 import "components"
 import "pages"
 
-// 乐乐书市 主界面外壳：登录/主界面切换、五 Tab、详情页栈、全局覆盖层
+// WHU二手书市 主界面外壳：登录/主界面切换、五 Tab、详情页栈、全局覆盖层
 Window {
     id: root
     visible: true
@@ -16,7 +16,7 @@ Window {
     minimumWidth: 320
     minimumHeight: 520
     color: Theme.bg
-    title: "乐乐书市"
+    title: "WHU二手书市"
 
     property bool loggedIn: false
     property bool booted: false // 启动判定完成标记：自动登录判定前不渲染登录页

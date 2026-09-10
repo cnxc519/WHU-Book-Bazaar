@@ -1,4 +1,4 @@
-// 乐乐书市 管理后台（纯二手书市）
+// WHU二手书市 管理后台（纯二手书市）
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

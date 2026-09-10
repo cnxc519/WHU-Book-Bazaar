@@ -108,7 +108,7 @@ public class ImageHelper {
     }
 
     /**
-     * 从服务器下载宣传海报并保存到系统相册（Pictures/乐乐书市/）。
+     * 从服务器下载宣传海报并保存到系统相册（Pictures/WHU二手书市/）。
      * 走 MediaStore 插入，API 29+ 无需存储权限。
      * @return true = 保存成功
      */
@@ -129,10 +129,10 @@ public class ImageHelper {
 
             android.content.ContentValues v = new android.content.ContentValues();
             v.put(android.provider.MediaStore.Images.Media.DISPLAY_NAME,
-                    "乐乐书市海报_" + System.currentTimeMillis() + ".png");
+                    "WHU二手书市海报_" + System.currentTimeMillis() + ".png");
             v.put(android.provider.MediaStore.Images.Media.MIME_TYPE, "image/png");
             v.put(android.provider.MediaStore.Images.Media.RELATIVE_PATH,
-                    android.os.Environment.DIRECTORY_PICTURES + "/乐乐书市");
+                    android.os.Environment.DIRECTORY_PICTURES + "/WHU二手书市");
             android.net.Uri uri = ctx.getContentResolver()
                     .insert(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
             if (uri == null) return false;

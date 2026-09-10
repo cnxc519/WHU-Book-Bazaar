@@ -50,7 +50,7 @@ private:
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
-    QGuiApplication::setApplicationName(QStringLiteral("乐乐书市"));
+    QGuiApplication::setApplicationName(QStringLiteral("WHU二手书市"));
     QGuiApplication::setOrganizationName(QStringLiteral("LeLeBook"));
 
     // 全平台统一用 Basic 控件样式：Windows 原生样式不支持自定义 background，

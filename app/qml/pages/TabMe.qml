@@ -261,14 +261,14 @@ Item {
             SectionLabel { label: "关于" }
             MenuCard {
                 items: [
-                    { icon: "ℹ️", label: "关于乐乐书市", action: "about" },
+                    { icon: "ℹ️", label: "关于WHU二手书市", action: "about" },
                     { icon: "🚪", label: "退出登录", action: "logout", danger: true }
                 ]
             }
 
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: "乐乐书市 v1." + (Math.floor(Session.appVersionCode / 10) % 10) + "." + (Session.appVersionCode % 10) + " · 不碰钱 · 当面交易"
+                text: "WHU二手书市 v1." + (Math.floor(Session.appVersionCode / 10) % 10) + "." + (Session.appVersionCode % 10) + " · 不碰钱 · 当面交易"
                 color: Root.Theme.textLight
                 font.pixelSize: 10
             }
@@ -286,7 +286,7 @@ Item {
         } else if (m.action === "checkVersion") {
             app.checkVersion(true)
         } else if (m.action === "about") {
-            Ui.confirm({ title: "乐乐书市 v1." + (Math.floor(Session.appVersionCode / 10) % 10) + "." + (Session.appVersionCode % 10), text: "校园二手书市平台\n· 无密码注册，仅邮箱验证码\n· 闲置教材信息展示，线下当面交易\n· 交易问题请走书籍详情内举报流程", okText: "知道了" }, function () {})
+            Ui.confirm({ title: "WHU二手书市 v1." + (Math.floor(Session.appVersionCode / 10) % 10) + "." + (Session.appVersionCode % 10), text: "校园二手书市平台\n· 无密码注册，仅邮箱验证码\n· 闲置教材信息展示，线下当面交易\n· 交易问题请走书籍详情内举报流程", okText: "知道了" }, function () {})
         } else if (m.page) {
             // 只传目标页确实声明的属性：HistoryPage 用 role，其余页面（公告中心/指南/设置等）没有，
             // 无脑传空 role 会让 push 对不存在属性赋值而中断，页面只显示一半内容

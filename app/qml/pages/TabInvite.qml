@@ -177,7 +177,7 @@ Item {
                     }
                     Text {
                         width: parent.width
-                        text: "· 和朋友一起用乐乐书市，好书流转更安心～"
+                        text: "· 和朋友一起用WHU二手书市，好书流转更安心～"
                         color: Root.Theme.textSub
                         font.pixelSize: 13
                         wrapMode: Text.Wrap

@@ -81,7 +81,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 3
                             Text {
-                                text: "乐乐书市"
+                                text: "WHU二手书市"
                                 color: "#FFFFFF"
                                 font.pixelSize: 24
                                 font.weight: Font.Black
@@ -328,32 +328,6 @@ Item {
                                             anchors.fill: parent
                                             onClicked: page.schoolId = modelData.id
                                         }
-                                    }
-                                }
-                            }
-                            // 学校不在此列：低调入口，联系开发者上架新学校
-                            Text {
-                                width: parent.width
-                                text: "找不到你的学校？"
-                                color: Root.Theme.textLight
-                                font.pixelSize: 11
-                                font.underline: true
-                                horizontalAlignment: Text.AlignHCenter
-                                MouseArea {
-                                    anchors.fill: parent
-                                    anchors.margins: -6
-                                    onClicked: {
-                                        Ui.confirm({
-                                            title: "添加新学校",
-                                            text: "平台目前先开放武汉大学试点。如果你的学校不在此列，请添加开发者微信：18956014656，提供学校名称即可为你上架。",
-                                            okText: "复制微信号",
-                                            cancelText: "关闭"
-                                        }, function (ok) {
-                                            if (ok) {
-                                                Clipboard.text = "18956014656"
-                                                Ui.toast("微信号已复制")
-                                            }
-                                        })
                                     }
                                 }
                             }
@@ -658,7 +632,7 @@ Item {
 
 readonly property var _agreementParas: [
         '更新日期：2026 年 9 月 9 日　　生效日期：2026 年 9 月 9 日',
-        '欢迎使用乐乐书市（以下简称“本平台”）。本平台为面向在校学生的校园二手书市信息平台，提供闲置教材等二手书信息展示与买卖沟通渠道。你（以下简称“用户”）在注册前请务必仔细阅读本协议，提交注册即视为已阅读、理解并同意本协议全部内容。',
+        '欢迎使用WHU二手书市（以下简称“本平台”）。本平台为面向在校学生的校园二手书市信息平台，提供闲置教材等二手书信息展示与买卖沟通渠道。你（以下简称“用户”）在注册前请务必仔细阅读本协议，提交注册即视为已阅读、理解并同意本协议全部内容。',
         '一、平台性质与服务范围',
         '1. 本平台仅提供信息撮合与技术支持：展示用户发布的二手书信息，提供买卖双方沟通渠道。平台不是交易的任何一方，不参与线下交付，不收取任何中介费用，不代收、不托管、不担保任何款项。',
         '2. 平台上的书价等信息仅为双方协商参考，实际交易由双方线下自行当面完成。',
@@ -705,7 +679,7 @@ readonly property var _agreementParas: [
                 Item { width: 8; height: 1 }
                 Text {
                     anchors.bottom: parent.bottom
-                    text: "乐乐书市 · 校园二手书市"
+                    text: "WHU二手书市 · 校园二手书市"
                     color: Root.Theme.textLight
                     font.pixelSize: 11
                 }

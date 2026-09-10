@@ -1,4 +1,4 @@
-// 乐乐书市 服务端入口（纯二手书市版）
+// WHU二手书市 服务端入口（纯二手书市版）
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -74,7 +74,7 @@ app.get('/d', (req, res) => {
 <html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>乐乐书市 · App 下载</title>
+<title>WHU二手书市 · App 下载</title>
 <style>
   body{margin:0;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
     background:linear-gradient(180deg,#0f8a5f 0%,#16a06f 30%,#f4f6f7 30.1%);min-height:100vh;text-align:center}
@@ -92,8 +92,8 @@ app.get('/d', (req, res) => {
   .foot{color:#a8b0b6;font-size:11px;margin-top:22px;line-height:1.7}
 </style></head><body>
 <div class="wrap">
-  <img class="logo" src="/appicon.png" alt="乐乐书市">
-  <h1>乐乐书市</h1>
+  <img class="logo" src="/appicon.png" alt="WHU二手书市">
+  <h1>WHU二手书市</h1>
   <div class="sub">校园二手书市 · 好书流转一个学期</div>
   <div class="card">
     ${hasApk ? `<span class="ver">最新版本 v${s.version_code || '?'}</span>
@@ -138,7 +138,7 @@ initWs(server);
 
 server.listen(cfg.port, cfg.host, () => {
   console.log('==========================================');
-  console.log(' 乐乐书市服务端已启动');
+  console.log(' WHU二手书市服务端已启动');
   console.log(` 地址: http://${cfg.host}:${cfg.port}`);
   console.log(` 管理后台: http://服务器IP:${cfg.port}/admin`);
   console.log(` 开发模式: ${cfg.dev_mode ? '开（验证码会打印在控制台）' : '关'}`);

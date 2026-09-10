@@ -21,14 +21,14 @@
         android:normalScreens="true" android:smallScreens="true"/>
 
     <application android:name="org.qtproject.qt.android.bindings.QtApplication"
-        android:label="乐乐书市"
+        android:label="WHU二手书市"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:usesCleartextTraffic="true"
         android:allowBackup="true" android:supportsRtl="true" android:hardwareAccelerated="true">
         <!-- usesCleartextTraffic：服务端目前是 http://IP:端口，未上 HTTPS 前必须开启；上 HTTPS 后建议移除 -->
         <activity android:name="org.qtproject.qt.android.bindings.QtActivity"
-            android:label="乐乐书市"
+            android:label="WHU二手书市"
             android:launchMode="singleTop"
             android:screenOrientation="unspecified"
             android:exported="true"

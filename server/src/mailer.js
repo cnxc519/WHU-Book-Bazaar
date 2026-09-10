@@ -36,11 +36,11 @@ async function sendCode(email, purpose) {
   db.prepare(`INSERT INTO email_codes(email,code,purpose,expires_at,created_at) VALUES(?,?,?,?,?)`)
     .run(email, code, purpose, nowTs() + CODE_TTL, nowTs());
 
-  const text = `【乐乐书市】您的验证码是 ${code}，10 分钟内有效。若非本人操作请忽略本邮件。`;
+  const text = `【WHU二手书市】您的验证码是 ${code}，10 分钟内有效。若非本人操作请忽略本邮件。`;
   if (transporter) {
     try {
       await Promise.race([
-        transporter.sendMail({ from: cfg.mail_from, to: email, subject: '【乐乐书市】验证码', text }),
+        transporter.sendMail({ from: cfg.mail_from, to: email, subject: '【WHU二手书市】验证码', text }),
         new Promise((_, rej) => setTimeout(() => rej(new Error('发送超时')), 15000)),
       ]);
     } catch (e) {
