@@ -654,7 +654,7 @@ async function vMe() {
 }
 function logout() {
   if (!confirm('退出登录？')) return;
-  setToken(''); ws?.close(); ws = null;
+  setToken(''); ws?.close(); ws = null; clearInterval(chatPoll);
   location.hash = '#/login'; render();
 }
 function changeAvatar() {
