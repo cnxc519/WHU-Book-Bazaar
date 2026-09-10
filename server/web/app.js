@@ -27,7 +27,7 @@ async function api(method, path, body, isForm) {
   else if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
   const r = await fetch('/api' + path, opt);
   const j = await r.json().catch(() => ({ ok: false, error: { msg: '网络异常，请稍后重试' } }));
-  if (r.status === 401) { setToken(''); render(); throw new Error(j.error?.msg || '请重新登录'); }
+  if (r.status === 401) { setToken(''); location.hash = '#/login'; render(); throw new Error(j.error?.msg || '请重新登录'); }
   if (!j.ok) throw new Error(j.error?.msg || '请求失败');
   return j.data;
 }
@@ -131,6 +131,9 @@ const routes = {
   '#/invite': vInvite, '#/me': vMe, '#/user': vUser,
 };
 function go(hash) { location.hash = hash; }
+// 关键：目标 hash 与当前相同时 location.hash 赋值不会触发 hashchange，
+// 必须手动 render —— 登录成功后曾因此卡在登录页（URL 已变视图未变）
+function navTo(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
 function render() {
   let hash = location.hash || '#/browse';
@@ -154,11 +157,12 @@ window.addEventListener('hashchange', render);
 // ---------- 登录 / 注册 ----------
 function vLogin() {
   $('#view').innerHTML = `
-    <div class="card" style="margin-top:20px;background:linear-gradient(135deg,#0f8a5f,#16a06f);color:#fff">
-      <div style="font-size:22px;font-weight:800">WHU二手书市</div>
-      <div style="font-size:12px;opacity:.9;margin-top:4px">教材课本 · 好书流转一个学期</div>
+    <div style="background:radial-gradient(circle at 85% -20%,rgba(255,255,255,.15) 0 70px,transparent 71px),linear-gradient(135deg,#0d7a54,#12a06f);color:#fff;border-radius:0 0 26px 26px;margin:-12px -14px 18px;padding:42px 26px 60px">
+      <div style="font-size:30px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:12px">
+        <span style="display:inline-block;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#fff,#d8efe4);box-shadow:inset 0 0 0 9px #0d7a54,0 3px 10px rgba(0,0,0,.2)"></span>WHU二手书市</div>
+      <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 好书流转一个学期</div>
     </div>
-    <div class="card">
+    <div class="card overlap">
       <div class="field"><label>邮箱（武大邮箱或其他邮箱均可）</label><input id="lg-email" type="email" placeholder="邮箱"></div>
       <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
       <button class="btn" id="lg-btn">登 录</button>
@@ -168,7 +172,7 @@ function vLogin() {
   $('#lg-btn').onclick = async () => {
     try {
       const d = await POST('/auth/login', { email: $('#lg-email').value.trim(), code: $('#lg-code').value.trim() });
-      setToken(d.token); window._myId = d.user.id; toast('登录成功'); location.hash = '#/browse';
+      setToken(d.token); window._myId = d.user.id; toast('登录成功'); navTo('#/browse');
     } catch (e) { toast(e.message); }
   };
 }
@@ -208,7 +212,7 @@ function vRegister() {
         email: $('#rg-email').value.trim(), code: $('#rg-code').value.trim(),
         nickname: $('#rg-nick').value.trim(), school_id: schoolId, gender,
       });
-      setToken(d.token); window._myId = d.user.id; toast('注册成功'); location.hash = '#/browse';
+      setToken(d.token); window._myId = d.user.id; toast('注册成功'); navTo('#/browse');
     } catch (e) { toast(e.message); }
   };
 }
@@ -233,7 +237,7 @@ function bindCode(emailSel, btnSel, purpose) {
 let browseQ = '', browseSort = 'latest';
 function vBrowse() {
   $('#view').innerHTML = `
-    <div class="card">
+    <div class="card overlap">
       <div class="row"><input id="bq" class="grow" placeholder="搜书名 / 课程 / 说明" value="${esc(browseQ)}"><button class="btn small" id="bq-go">搜索</button></div>
       <div class="chips" style="margin-top:10px">
         <button class="chip ${browseSort === 'latest' ? 'on' : ''}" data-s="latest">最新发布</button>
@@ -303,8 +307,8 @@ async function vBook(hash) {
       </div>
       <button class="btn small ghost" onclick="go('#/user/${b.seller?.id}')">看主页</button>
     </div>
-    <div class="card" style="background:#fdf6e8">
-      <div class="sub" style="line-height:1.7;color:#8a6d3b">平台仅提供信息展示与联系，不参与交易：请先聊好价格与地点，<b>见面当面验书、满意再付款</b>。</div>
+    <div class="card tips-card">
+      <div class="sub">平台仅提供信息展示与联系，不参与交易：请先聊好价格与地点，<b>见面当面验书、满意再付款</b>。</div>
     </div>
     ${d.is_seller
       ? `<button class="btn ghost" onclick="go('#/sell')">管理我的书（卖书页）</button>`

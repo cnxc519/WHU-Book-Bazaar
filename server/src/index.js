@@ -18,7 +18,12 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '128kb' }));
 
 // 网页版（移动端优先的 SPA，复用同一套 API）：根路径直达
-app.use(express.static(path.join(__dirname, '..', 'web')));
+// 网页版（移动端优先的 SPA，复用同一套 API）：根路径直达
+// html/js/css 全部 no-cache：小文件，保证发新版手机端立即生效（此前浏览器
+// 启发式缓存导致旧 app.js 残留，未登录卡在书市页不进登录页）
+app.use(express.static(path.join(__dirname, '..', 'web'), {
+  setHeaders: (res) => res.setHeader('Cache-Control', 'no-cache'),
+}));
 
 // 静态资源：头像 / 书籍封面（APK 不允许公开直链下载，见下方 /dl/apk）
 // 拦截必须放在 express.static 之前，否则静态服务会先命中并直接回包
