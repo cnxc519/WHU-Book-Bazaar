@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>乐乐书市 · 管理后台</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div id="login-box">
+  <div class="login-card">
+    <h1>乐乐书市 · 管理后台</h1>
+    <input id="login-user" placeholder="账号" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="密码" autocomplete="current-password">
+    <button id="login-btn" class="primary">登 录</button>
+    <div id="login-err" class="err"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <aside id="sidebar">
+    <div class="brand">乐乐书市后台</div>
+    <nav>
+      <a data-view="dashboard" class="active">概览</a>
+      <a data-view="schools">学校管理</a>
+      <a data-view="notices">公告管理</a>
+      <a data-view="users">用户管理</a>
+      <a data-view="books">书市书籍</a>
+      <a data-view="bookreports">书市举报<span id="bookreport-badge" class="badge hidden"></span></a>
+      <a data-view="version">版本更新</a>
+    </nav>
+    <button id="logout-btn" class="ghost">退出登录</button>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<div id="toast" class="hidden"></div>
+<script src="admin.js"></script>
+</body>
+</html>

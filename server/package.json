@@ -1,0 +1,22 @@
+{
+  "name": "lele-daipao-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "乐乐代跑 - 校园代跑平台服务端",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "hashpass": "node scripts/hashpass.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.2.0",
+    "nodemailer": "^6.9.16",
+    "ws": "^8.18.0"
+  }
+}

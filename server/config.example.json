@@ -1,0 +1,29 @@
+{
+  "_说明": "乐乐代跑服务端配置。复制为 server/config.json 后修改。修改后重启服务生效。金额单位均为分（元 x 100）。",
+  "port": 8901,
+  "host": "0.0.0.0",
+  "dev_mode": false,
+  "jwt_secret": "请替换为任意随机长字符串",
+  "smtp": {
+    "host": "smtp.qq.com",
+    "port": 587,
+    "secure": false,
+    "user": "你的QQ邮箱@qq.com",
+    "pass": "SMTP授权码",
+    "_说明": "QQ 邮箱需要在设置-账户里开启 SMTP 服务获得授权码"
+  },
+  "mail_from": "乐乐代跑 <你的QQ邮箱@qq.com>",
+  "admin": {
+    "username": "admin",
+    "password": "请修改管理密码",
+    "_说明": "管理后台账号（http://服务器:端口/admin）"
+  },
+  "tz_offset_hours": 8,
+  "upload_dir": "./uploads",
+  "ai": {
+    "_说明": "批量发书的图片识别（GLM 视觉）。key 只存服务端，勿提交 git。不配置则批量识别不可用（手动填书名仍可用）。",
+    "base_url": "https://open.bigmodel.cn/api/paas/v4",
+    "api_key": "你的智谱API Key",
+    "model": "glm-5.3-flash"
+  }
+}

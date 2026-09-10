@@ -1,0 +1,59 @@
+# Node
+node_modules/
+*.log
+
+# 数据库与上传
+server/data.db
+server/data.db-wal
+server/data.db-shm
+server/uploads/
+
+# Qt 构建
+app/build/
+app/.qt/
+
+# 测试环境运行数据
+testenv/server/data.db
+testenv/server/data.db-wal
+testenv/server/data.db-shm
+testenv/server/server.log
+testenv/harness/*.png
+
+# 本地调试产物
+appwin.png
+appwin_client.png
+shot_guide.png
+debug_page.png
+see_out.txt
+.vscode/
+CMakeLists.txt.user
+app/*.ps1
+app/see.py
+app/vision.py
+app/*.log
+app/cur_notice.png
+app/now.png
+app/probe_err.log
+app/probe_out.log
+app/view_cur_notice.png
+app/view_debug_page.png
+testenv/row3_zoom.png
+testenv/app_*.log
+testenv/mre.qml
+testenv/mre.log
+testenv/click.ps1
+testenv/scroll.ps1
+testenv/realdrag.ps1
+testenv/fix_braces.js
+testenv/*.log
+
+# 含密配置（SMTP 授权码/管理密码/jwt_secret），仅存本地，部署脚本会带上
+server/config.json
+testenv/server/config.json
+# 本地构建的安装包与上传目录
+testenv/*.apk
+testenv/*.apk.idsig
+testenv/server/uploads/
+testenv/dl_test.apk
+*.keystore
+testenv/bookid.txt

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 说明：Qt 6.9 CMake 只有设置了 QT_ANDROID_PACKAGE_SOURCE_DIR 指向本目录时才会使用这份清单。
+      此前没设置，Qt 用自带模板生成清单，导致 REQUEST_INSTALL_PACKAGES（应用内更新装不了）、
+      usesCleartextTraffic、位置权限全部丢失，本 manifest 里的 FileProvider 也被替换成 qtprovider。 -->
+<manifest package="com.lele.book" xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto"
+    android:versionCode="-- %%INSERT_VERSION_CODE%% --" android:versionName="-- %%INSERT_VERSION_NAME%% --">
+    <!-- versionCode/Name 占位符由 androiddeployqt 按 CMake 的 APP_VERSION_CODE 注入，
+         别写死；自定义 manifest 时 Qt 不会主动补这两个属性，缺了构建出 versionCode=0 的包，
+         覆盖安装必报 INSTALL_FAILED_VERSION_DOWNGRADE（还极易被安装脚本的输出淹没而没发现） -->
+
+    <!-- uses-sdk 不用写：Qt 6.9 强制 minSdk 28 并自动注入（写了 24 反而报错） -->
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- 应用内更新：下载完的 APK 交给系统安装器必须声明 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+
+    <supports-screens android:anyDensity="true" android:largeScreens="true"
+        android:normalScreens="true" android:smallScreens="true"/>
+
+    <application android:name="org.qtproject.qt.android.bindings.QtApplication"
+        android:label="乐乐书市"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:usesCleartextTraffic="true"
+        android:allowBackup="true" android:supportsRtl="true" android:hardwareAccelerated="true">
+        <!-- usesCleartextTraffic：服务端目前是 http://IP:端口，未上 HTTPS 前必须开启；上 HTTPS 后建议移除 -->
+        <activity android:name="org.qtproject.qt.android.bindings.QtActivity"
+            android:label="乐乐书市"
+            android:launchMode="singleTop"
+            android:screenOrientation="unspecified"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation|mcc|mnc|density">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="android.app.lib_name" android:value="LeLeBook"/>
+            <meta-data android:name="android.app.arguments" android:value=""/>
+        </activity>
+
+        <!-- 应用内更新：FileProvider 共享 APK 给系统安装器（authority 与 Updater 里的一致） -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.lele.book.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+    </application>
+</manifest>

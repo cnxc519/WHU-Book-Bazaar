@@ -1,0 +1,61 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: "PingFang SC","Microsoft YaHei",sans-serif; background:#f3f5f7; color:#1f2329; font-size:14px; }
+.hidden { display:none !important; }
+input,select,textarea { padding:8px 10px; border:1px solid #d9dde3; border-radius:8px; font-size:14px; outline:none; }
+input:focus,select:focus,textarea:focus { border-color:#00a87e; }
+button { padding:8px 16px; border:none; border-radius:8px; cursor:pointer; font-size:14px; }
+button.primary { background:#00a87e; color:#fff; }
+button.primary:hover { background:#00966f; }
+button.danger { background:#e5484d; color:#fff; }
+button.ghost { background:#eef0f3; color:#333; }
+button.small { padding:4px 10px; font-size:12px; border-radius:6px; }
+button:disabled { opacity:.5; cursor:not-allowed; }
+
+/* 登录 */
+#login-box { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+.login-card { background:#fff; padding:40px; border-radius:16px; width:340px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+.login-card h1 { font-size:20px; margin-bottom:24px; text-align:center; color:#00a87e; }
+.login-card input { width:100%; margin-bottom:12px; }
+.login-card button { width:100%; }
+.err { color:#e5484d; margin-top:10px; font-size:13px; min-height:18px; }
+
+/* 布局 */
+#app { display:flex; min-height:100vh; }
+#sidebar { width:200px; background:#14181f; color:#cfd3da; display:flex; flex-direction:column; position:fixed; top:0; bottom:0; }
+.brand { padding:20px 16px; font-size:16px; font-weight:600; color:#fff; border-bottom:1px solid #252b36; }
+#sidebar nav { flex:1; padding:12px 8px; overflow-y:auto; }
+#sidebar nav a { display:block; padding:10px 14px; border-radius:8px; color:#cfd3da; text-decoration:none; margin-bottom:2px; cursor:pointer; }
+#sidebar nav a:hover { background:#222833; }
+#sidebar nav a.active { background:#00a87e; color:#fff; }
+.badge { background:#e5484d; color:#fff; border-radius:10px; padding:1px 7px; font-size:11px; margin-left:6px; }
+#logout-btn { margin:12px; }
+#main { flex:1; margin-left:200px; padding:24px 28px; }
+
+/* 卡片 */
+.card { background:#fff; border-radius:12px; padding:20px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.card h2 { font-size:16px; margin-bottom:14px; }
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.stat { background:#fff; border-radius:12px; padding:16px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+.stat .num { font-size:26px; font-weight:700; color:#00a87e; }
+.stat .lbl { color:#7a8088; margin-top:4px; font-size:13px; }
+
+/* 表格 */
+table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+th,td { padding:10px 12px; text-align:left; border-bottom:1px solid #eef0f3; font-size:13px; vertical-align:middle; }
+th { background:#f7f8fa; font-weight:600; color:#5b616b; white-space:nowrap; }
+tr:hover td { background:#fafbfc; }
+.tag { display:inline-block; padding:2px 8px; border-radius:6px; font-size:12px; background:#eef0f3; color:#5b616b; }
+.tag.green { background:#e3f7ef; color:#00875f; }
+.tag.red { background:#fde8e9; color:#c92a2e; }
+.tag.orange { background:#fff3e0; color:#b26a00; }
+.tag.blue { background:#e8f1fd; color:#1f6fc9; }
+
+.toolbar { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+.toolbar .spacer { flex:1; }
+label.fld { display:inline-flex; align-items:center; gap:6px; color:#5b616b; font-size:13px; }
+
+#toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#1f2329; color:#fff; padding:10px 20px; border-radius:8px; z-index:99; box-shadow:0 4px 16px rgba(0,0,0,.2); }
+
+/* 管理端补充样式（书市等） */
+.sub { font-size:11px; color:#8a9099; margin-top:2px; }
+table th, table td { max-width: 320px; }

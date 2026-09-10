@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- AppDataLocation 即 files-path（应用内部存储 files 目录） -->
+    <files-path name="internal" path="."/>
+    <!-- getExternalFilesDir 即 external-files-path（外部私有目录，部分 ROM 内部 root 匹配失败时的备选） -->
+    <external-files-path name="external" path="."/>
+</paths>
