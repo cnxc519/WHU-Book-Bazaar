@@ -438,7 +438,7 @@ Item {
         load(false)
     }
 
-    function refresh() { load(true) }
+    function refresh() { load(true); loadUnread() }
 
     Component.onCompleted: {
         load(true)

@@ -8,6 +8,7 @@ const { requireUser } = require('../auth');
 const { ok, fail, nowTs, clampInt } = require('../util');
 const { userPublic } = require('../business');
 const { pushToUser } = require('../ws');
+const { notifyFirstContact } = require('../mailer');
 
 const router = express.Router();
 router.use(requireUser);
@@ -331,6 +332,9 @@ router.post('/:id/contact', (req, res) => {
       .run(chat.id, `买家 ${me.nickname} 想买《${b.title}》，请与 TA 沟通价格与交易地点（平台不代收钱，见面当面交易）`, nowTs());
     notify(b.seller_id, 'book_contact', `有人想买《${b.title}》`, `${me.nickname} 想买你发布的《${b.title}》（${(b.price_cents / 100).toFixed(2)} 元），去「书市-消息」回复 TA`,
       { book_id: b.id, chat_id: chat.id });
+    // 重要消息邮件提醒（仅首次联系；发送失败不影响主流程）
+    const sellerEmail = db.prepare(`SELECT email FROM users WHERE id=?`).get(b.seller_id);
+    if (sellerEmail) notifyFirstContact(sellerEmail.email, b.title, me.nickname);
     pushToUser(b.seller_id, { t: 'bchat', chat_id: chat.id });
     pushToUser(me.id, { t: 'bchat', chat_id: chat.id });
   }

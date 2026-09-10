@@ -16,6 +16,18 @@ if (cfg.smtp && cfg.smtp.host) {
 const CODE_TTL = 10 * 60 * 1000; // 10 分钟有效
 const CODES_PER_DAY = 10;
 
+// 重要消息邮件：买家第一次针对某本书联系卖家时提醒（普通聊天不发，避免打扰）。
+// 尽力而为：失败只记日志，不影响主流程；未配置 SMTP 时静默跳过
+function notifyFirstContact(sellerEmail, bookTitle, buyerNickname) {
+  if (!transporter || !sellerEmail) return;
+  const text = `买家 ${buyerNickname} 第一次联系你出售的《${bookTitle}》//请打开 App「消息」回复 TA。`
+      .replace('//', '，');
+  transporter.sendMail({
+    from: cfg.mail_from, to: sellerEmail,
+    subject: `【WHU二手书市】有人想买你的《${bookTitle}》`, text,
+  }).catch((e) => console.error('[mailer] 首次联系提醒发送失败:', e.message));
+}
+
 // 生成并发送验证码。返回 {ok, msg}；开发模式额外返回 code。
 // 正式模式会真正等待 SMTP 发送结果（15 秒超时）：发不出去就明确报错，
 // 避免接口返回"已发送"但用户永远收不到邮件、验证码只躺在服务器控制台
@@ -68,4 +80,4 @@ function verifyCode(email, purpose, code) {
   return { ok: true, msg: 'ok' };
 }
 
-module.exports = { sendCode, verifyCode };
+module.exports = { sendCode, verifyCode, notifyFirstContact };

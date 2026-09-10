@@ -149,9 +149,9 @@ router.post('/books/:id/status', (req, res) => {
 // ---------- 书市举报处理 ----------
 router.get('/book-reports', (req, res) => {
   const list = db.prepare(`
-      SELECT rp.*, b.title, u1.nickname reporter_name, u2.nickname seller_name
-      FROM book_reports rp JOIN books b ON b.id=rp.book_id
-      JOIN users u1 ON u1.id=rp.reporter_id JOIN users u2 ON u2.id=b.seller_id
+      SELECT rp.*, COALESCE(b.title, '（书籍已删除）') title, u1.nickname reporter_name, u2.nickname seller_name
+      FROM book_reports rp LEFT JOIN books b ON b.id=rp.book_id
+      LEFT JOIN users u1 ON u1.id=rp.reporter_id LEFT JOIN users u2 ON u2.id=b.seller_id
       ORDER BY rp.status='open' DESC, rp.id DESC LIMIT 100`).all();
   ok(res, { list });
 });

@@ -146,5 +146,9 @@ Item {
         page._unsubNotif = Realtime.on("notif", function () { page.load() })
     }
 
-    Component.onDestruction: if (page._unsubNotif) page._unsubNotif()
+    Component.onDestruction: {
+        if (page._unsubNotif) page._unsubNotif()
+        // 进通知页会把全部通知标为已读：返回书市页时立刻刷新铃铛角标，不用等下次刷新
+        if (app.refreshTab) app.refreshTab("book")
+    }
 }

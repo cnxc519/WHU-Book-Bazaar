@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS book_chats(
   unread_seller INTEGER NOT NULL DEFAULT 0,
   unread_buyer INTEGER NOT NULL DEFAULT 0,
   last_at INTEGER,
+  closed INTEGER NOT NULL DEFAULT 0,  -- 标记售出即删时置 1，关闭会话
   UNIQUE(book_id, buyer_id)
 );
 CREATE TABLE IF NOT EXISTS book_messages(
