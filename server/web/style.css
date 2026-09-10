@@ -29,9 +29,10 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
     radial-gradient(circle at 8% 120%, rgba(255,255,255,.12) 0 46px, transparent 47px),
     linear-gradient(135deg, #0d7a54, #12a06f);
   color: #fff;
-  padding: calc(14px + env(safe-area-inset-top)) 18px 52px;
+  padding: calc(16px + env(safe-area-inset-top)) 18px 22px;
   display: flex; align-items: center; justify-content: space-between;
   position: sticky; top: 0; z-index: 10;
+  border-radius: 0 0 26px 26px;
 }
 #topbar-title { font-size: 19px; font-weight: 800; letter-spacing: 1px; display: flex; align-items: center; gap: 9px; }
 #topbar-title::before {
@@ -50,13 +51,27 @@ input, select, textarea { font-family: inherit; font-size: 14px; }
 #tabbar .badge { top: -3px; right: -8px; }
 
 /* ---------- 视图区 ---------- */
-#view { flex: 1; padding: 0 14px 92px; }
-#view.flush { padding: 12px 14px 90px; }
-
-/* 顶栏下第一张卡上叠效果 */
-#view .overlap { margin-top: -30px; position: relative; z-index: 5; padding-top: 42px; }
+#view { flex: 1; padding: 16px 14px 92px; }
+#view.flush { padding: 14px 14px 90px; }
 .row { display: flex; gap: 8px; align-items: center; }
 .row .grow { flex: 1; min-width: 0; }
+
+/* 搜索胶囊（书市页） */
+.search-card { padding: 14px; }
+.search-row { display: flex; gap: 9px; align-items: center; }
+.search-ico { width: 18px; height: 18px; color: var(--light); flex-shrink: 0; margin-left: 12px; }
+.search-row input {
+  flex: 1; min-width: 0; border: none; background: #f1f4f6;
+  border-radius: 12px; padding: 11px 12px 11px 2px; font-size: 14px; color: var(--ink);
+}
+.search-row input:focus { outline: none; background: #eaf0ee; }
+.search-row input::placeholder { color: #a8b0b6; }
+.search-row button {
+  flex-shrink: 0; border: none; color: #fff; font-weight: 700; font-size: 14px;
+  padding: 11px 18px; border-radius: 12px;
+  background: linear-gradient(135deg, #14a871, #0d8a5f);
+  box-shadow: 0 4px 12px rgba(15,138,95,.28);
+}
 
 /* ---------- 卡片 ---------- */
 .card {

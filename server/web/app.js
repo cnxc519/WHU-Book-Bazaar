@@ -237,9 +237,13 @@ function bindCode(emailSel, btnSel, purpose) {
 let browseQ = '', browseSort = 'latest';
 function vBrowse() {
   $('#view').innerHTML = `
-    <div class="card overlap">
-      <div class="row"><input id="bq" class="grow" placeholder="搜书名 / 课程 / 说明" value="${esc(browseQ)}"><button class="btn small" id="bq-go">搜索</button></div>
-      <div class="chips" style="margin-top:10px">
+    <div class="card search-card">
+      <div class="search-row">
+        <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="bq" placeholder="搜书名 / 课程 / 说明" value="${esc(browseQ)}">
+        <button id="bq-go">搜索</button>
+      </div>
+      <div class="chips" style="margin-top:12px">
         <button class="chip ${browseSort === 'latest' ? 'on' : ''}" data-s="latest">最新发布</button>
         <button class="chip ${browseSort === 'price_asc' ? 'on' : ''}" data-s="price_asc">价格 低→高</button>
         <button class="chip ${browseSort === 'price_desc' ? 'on' : ''}" data-s="price_desc">价格 高→低</button>
