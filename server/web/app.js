@@ -506,13 +506,19 @@ async function loadMine() {
       const btn = b.status === 'off'
         ? `<button class="btn small ghost" onclick="bookStatus(${b.id},'on')">重新上架</button><button class="btn small danger" onclick="bookStatus(${b.id},'sold')">标记已售出</button>`
         : (b.status === 'on' ? `<button class="btn small ghost" onclick="bookStatus(${b.id},'off')">暂时下架</button><button class="btn small danger" onclick="bookStatus(${b.id},'sold')">标记已售出</button>` : '');
-      return `<div class="book-card" onclick="go('#/book/${b.id}')">
-        ${b.photo ? `<img class="cover" src="/files/books/${b.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">📖</div>'}
-        <div class="bc-body"><div class="bc-title">${esc(b.title)}</div>
-          <div style="margin-top:2px">${st}${b.unread_chats > 0 ? `<span class="tag red">💬 ${b.unread_chats} 未读</span>` : ''}</div>
-          <div class="bc-meta">${b.price_note && b.price_cents === 0 ? esc(b.price_note) : ''}</div>
-        </div>${price}</div>
-        <div class="row" style="margin:-6px 0 10px">${btn}<button class="btn small ghost" onclick="changeCover(${b.id}, event)">换封面</button></div>`;
+      return `<div class="mine-item">
+        <div class="book-card" onclick="go('#/book/${b.id}')">
+          ${b.photo ? `<img class="cover" src="/files/books/${b.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">📖</div>'}
+          <div class="bc-body"><div class="bc-title">${esc(b.title)}</div>
+            <div style="margin-top:3px">${st}${b.unread_chats > 0 ? `<span class="tag red">💬 ${b.unread_chats} 未读</span>` : ''}</div>
+            <div class="bc-meta">${b.price_note && b.price_cents === 0 ? esc(b.price_note) : ''}</div>
+          </div>${price}</div>
+        <div class="row mine-btns">
+          ${btn}
+          <button class="btn small ghost" onclick="changeCover(${b.id}, event)">换封面</button>
+          <button class="btn small ghost" onclick="go('#/book/${b.id}')">详情</button>
+        </div>
+      </div>`;
     }).join('');
     document.querySelectorAll('[data-coverid]').forEach((el) => el.onclick = (e) => { e.stopPropagation(); changeCover(+el.dataset.coverid); });
   } catch (e) { $('#mine-list').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
@@ -561,12 +567,14 @@ let chatPoll = null;
 async function vChat(hash) {
   const id = hash.split('/')[2];
   const meta = (await GET('/book-chats')).list.find((c) => String(c.id) === String(id));
-  $('#view').className = 'flush';
+  $('#view').className = 'flush chatpage';
   $('#view').innerHTML = `
-    <div class="card" style="margin-bottom:8px;padding:10px 12px">
-      <div class="row"><div class="grow"><b>《${esc(meta?.book?.title || '已删除的书')}》</b>
-      <div class="sub">${meta?.book ? (meta.book.price_cents > 0 ? yuan(meta.book.price_cents) : esc(meta.book.price_note || '')) : ''} · 对方：${esc(meta?.other?.nickname || '')}</div></div>
-      <span class="linkish" onclick="history.back()">返回</span></div>
+    <div class="chat-meta">
+      <button class="back-btn" onclick="history.back()">‹</button>
+      <div class="grow" style="min-width:0">
+        <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">《${esc(meta?.book?.title || '已删除的书')}》</div>
+        <div class="sub">${meta?.book ? (meta.book.price_cents > 0 ? yuan(meta.book.price_cents) : esc(meta.book.price_note || '')) : ''} · 对方：${esc(meta?.other?.nickname || '')}</div>
+      </div>
     </div>
     <div class="chat-wrap">
       <div class="chat-list" id="msgs"><div class="empty">加载中…</div></div>
