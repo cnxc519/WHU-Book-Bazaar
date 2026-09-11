@@ -253,6 +253,7 @@ Item {
             MenuCard {
                 items: [
                     { icon: "📢", label: "公告中心", page: "NoticesPage.qml" },
+                    { icon: "💬", label: "意见反馈", action: "feedback" },
                     { icon: "🔔", label: "检查更新", action: "checkVersion" }
                 ]
             }
@@ -282,6 +283,16 @@ Item {
                 Session.clear()
                 Realtime.disconnect()
                 app.loggedIn = false
+            })
+        } else if (m.action === "feedback") {
+            Ui.input({ title: "意见反馈", hint: "问题和建议（5-500 字）" }, function (text) {
+                if (!text) return
+                var t = text.trim()
+                if (t.length < 5) { Ui.toast("反馈内容至少 5 个字"); return }
+                if (t.length > 500) { Ui.toast("反馈内容最多 500 字"); return }
+                Api.post("/feedback", { content: t }).then(function () {
+                    Ui.toast("感谢反馈！已直达开发者")
+                }).catch(function (e) { Ui.toast(e.msg) })
             })
         } else if (m.action === "checkVersion") {
             app.checkVersion(true)

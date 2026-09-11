@@ -128,6 +128,14 @@ CREATE TABLE IF NOT EXISTS book_messages(
   lon REAL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS feedback(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open',   -- open 待处理 / resolved 已处理
+  reply_note TEXT,
+  created_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS active_days(
   user_id INTEGER NOT NULL,
   day TEXT NOT NULL,              -- 北京时间 YYYY-MM-DD

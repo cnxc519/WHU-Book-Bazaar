@@ -31,6 +31,7 @@ router.get('/dashboard', (req, res) => {
     users: db.prepare(`SELECT COUNT(*) c FROM users WHERE id!=0`).get().c,
     books_on: db.prepare(`SELECT COUNT(*) c FROM books WHERE status='on'`).get().c,
     open_book_reports: db.prepare(`SELECT COUNT(*) c FROM book_reports WHERE status='open'`).get().c,
+    open_feedback: db.prepare(`SELECT COUNT(*) c FROM feedback WHERE status='open'`).get().c,
     ...activeStats(),
     settings: getSettings(),
   });
@@ -165,6 +166,22 @@ router.post('/book-reports/:id/resolve', (req, res) => {
   ok(res, { ok: true });
 });
 
+
+// ---------- 用户反馈 ----------
+router.get('/feedback', (req, res) => {
+  const list = db.prepare(`
+      SELECT f.*, u.nickname, u.email
+      FROM feedback f JOIN users u ON u.id=f.user_id
+      ORDER BY f.status='open' DESC, f.id DESC LIMIT 100`).all();
+  ok(res, { list });
+});
+router.post('/feedback/:id/resolve', (req, res) => {
+  const fb = db.prepare(`SELECT * FROM feedback WHERE id=? AND status='open'`).get(parseInt(req.params.id, 10));
+  if (!fb) return fail(res, '反馈不存在或已处理');
+  const note = String(req.body.note || '').trim();
+  db.prepare(`UPDATE feedback SET status='resolved', reply_note=? WHERE id=?`).run(note, fb.id);
+  ok(res, { ok: true });
+});
 
 router.put('/version', (req, res) => {
   const s = getSettings();

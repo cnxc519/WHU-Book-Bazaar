@@ -56,16 +56,17 @@ async function doLogin() {
 function go(view) {
   currentView = view;
   $$('#sidebar nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === view));
-  ({ dashboard: vDashboard, schools: vSchools, notices: vNotices, users: vUsers, books: vBooks, bookreports: vBookReports, version: vVersion })[view]();
+  ({ dashboard: vDashboard, schools: vSchools, notices: vNotices, users: vUsers, books: vBooks, bookreports: vBookReports, feedback: vFeedback, version: vVersion })[view]();
 }
 
 // 侧栏角标（待处理举报数）
-function setBadges(openBookReports) {
-  const bb = $('#bookreport-badge');
+function setBadges(openBookReports, openFeedback) {
+  const bb = $('#bookreport-badge'), fb = $('#feedback-badge');
   bb.textContent = openBookReports; bb.classList.toggle('hidden', !openBookReports);
+  fb.textContent = openFeedback; fb.classList.toggle('hidden', !openFeedback);
 }
 function refreshBadges() {
-  api('GET', '/dashboard').then((d) => setBadges(d.open_book_reports)).catch(() => {});
+  api('GET', '/dashboard').then((d) => setBadges(d.open_book_reports, d.open_feedback)).catch(() => {});
 }
 
 // ---------- 概览 ----------
@@ -80,9 +81,11 @@ async function vDashboard() {
         <div class="stat"><div class="num">${d.users}</div><div class="lbl">注册用户</div></div>
         <div class="stat"><div class="num">${d.books_on}</div><div class="lbl">书市在售</div></div>
         <div class="stat"><div class="num">${d.open_book_reports}</div><div class="lbl">待处理书举报</div></div>
+        <div class="stat"><div class="num">${d.open_feedback}</div><div class="lbl">待处理反馈</div></div>
+        <div class="stat"><div class="num">${d.open_feedback}</div><div class="lbl">待处理反馈</div></div>
       </div>
       </div>`);
-    setBadges(d.open_book_reports);
+    setBadges(d.open_book_reports, d.open_feedback);
   } catch (e) { render(`<div class="card">加载失败：${esc(e.message)}</div>`); }
 }
 
@@ -264,6 +267,29 @@ async function resolveBookReport(id) {
   if (!note.trim()) return toast('请填写处理说明');
   await api('POST', `/book-reports/${id}/resolve`, { note: note.trim() });
   toast('已处理'); vBookReports();
+}
+
+// ---------- 用户反馈 ----------
+async function vFeedback() {
+  const d = await api('GET', '/feedback');
+  refreshBadges();
+  render(`
+    <div class="card">
+      <h2>用户反馈（问题和建议，直达开发者）</h2>
+      <table>
+        <tr><th>ID</th><th>用户</th><th>内容</th><th>时间</th><th>状态</th><th>操作</th></tr>
+        ${d.list.length ? d.list.map((f) => `<tr>
+          <td>${f.id}</td><td>${esc(f.nickname)}<div class="sub">${esc(f.email)}</div></td>
+          <td style="max-width:420px">${esc(f.content)}</td>
+          <td>${fmt(f.created_at)}</td>
+          <td>${f.status === 'open' ? '<span class="tag orange">待处理</span>' : '<span class="tag green">已处理</span>'}</td>
+          <td>${f.status === 'open' ? `<button class="small primary" onclick="resolveFeedback(${f.id})">标记已处理</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="6" class="muted">暂无反馈</td></tr>'}
+      </table>
+    </div>`);
+}
+async function resolveFeedback(id) {
+  await api('POST', `/feedback/${id}/resolve`, {});
+  toast('已处理'); vFeedback();
 }
 
 // ---------- 版本管理 ----------

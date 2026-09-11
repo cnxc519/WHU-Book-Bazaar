@@ -125,6 +125,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/book-chats', require('./routes/bookchats'));
 app.use('/api/books', require('./routes/books'));
 app.use('/api/invite', require('./routes/invite'));
+app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api', require('./routes/misc'));
 app.use('/api/admin', require('./routes/admin'));
 

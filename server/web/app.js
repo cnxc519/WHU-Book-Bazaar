@@ -469,6 +469,7 @@ function batchFormHtml() {
     <div class="field" style="margin-top:12px"><label>书名（识别后请核对，可增删改）<button class="chip small" style="float:right" id="add-one">+ 添加一本</button></label><div id="titles"></div></div>
     <div class="field"><label>交易地点（必填，所有书共用）</label><input id="bt-loc" placeholder="当面交书的地点"></div>
     <div class="field"><label>价格描述（必填，1-60 字，所有书共用）</label><input id="bt-price" placeholder="例如：左边10r/本，右边20r/本"></div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
     <button class="btn" id="bt-go"></button>`;
 }
 function renderTitles() {
@@ -518,7 +519,7 @@ function bindBatch() {
     if (!sellImg) return toast('请先选合照（会作为每本书的封面）');
     if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
     if (!price) return toast('请填写价格描述，例如：左边10r/本，右边20r/本');
-    if (!confirm(`将一次发布 ${titles.length} 本独立的书：共用合照封面、地点「${loc}」、价格描述「${price}」。确认发布？`)) return;
+    if (!confirm(`将一次发布 ${titles.length} 本独立的书：共用合照封面、地点「${loc}」、价格描述「${price}」。有买家第一次联系你时会邮件通知你。确认发布？`)) return;
     const btn = $('#bt-go'); btn.disabled = true; btn.textContent = '发布中…';
     try {
       const fd = new FormData();
@@ -549,6 +550,7 @@ function singleFormHtml() {
       <div class="grow sub">拍清书名与封面更醒目</div></div>
       <input type="file" id="s-file" accept="image/*" class="hidden">
     </div></div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
     <button class="btn" id="s-go">发布到书市</button>`;
 }
 let sellCond = '';
@@ -580,7 +582,7 @@ function bindSingle() {
     if (!title) return toast('请填写书名');
     if (!Number.isFinite(price) || price < 1 || price > 99999) return toast('价格需在 0.01-999.99 元之间');
     if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
-    if (!confirm(`《${title}》定价 ${(price / 100).toFixed(2)} 元。平台仅提供信息展示，请与买家当面验书、当面付款。确认发布？`)) return;
+    if (!confirm(`《${title}》定价 ${(price / 100).toFixed(2)} 元。平台仅提供信息展示，请与买家当面验书、当面付款。有买家第一次联系你时会邮件通知你。确认发布？`)) return;
     const btn = $('#s-go'); btn.disabled = true;
     try {
       const d = await POST('/books', {
@@ -741,7 +743,7 @@ async function vInvite() {
         <input id="bind-code" class="grow" placeholder="输入好友的邀请码" style="border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;font-size:13px" oninput="this.value=this.value.toUpperCase()">
         <button class="btn small" id="bind-go">绑定</button>
       </div>
-      <div class="muted" style="font-size:11px;margin-top:6px">如果好友先注册了也没关系：在这里填 TA 的邀请码即可成为好友（每人限一次，绑定后不可更改）</div>`;
+      <div class="muted" style="font-size:11px;margin-top:6px">在这里填 TA 的邀请码即可成为好友（每人限一次，绑定后不可更改）</div>`;
   $('#view').innerHTML = `
     <div class="card center" style="background:linear-gradient(135deg,#0f8a5f,#16a06f);color:#fff">
       <div style="font-size:15px;opacity:.9">你的邀请码</div>
@@ -794,11 +796,29 @@ async function vMe() {
       <button class="btn small ghost" onclick="go('#/invite')">查看</button>
     </div>
     <div class="card">
+      <div class="row" style="margin-bottom:8px"><div style="font-size:22px">💬</div><div class="grow"><b style="font-size:14px">意见反馈</b><div class="sub">问题和建议都会直达开发者</div></div></div>
+      <textarea id="fb-text" rows="3" placeholder="说说你的问题和建议（5-500 字）" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;line-height:1.5"></textarea>
+      <button class="btn small" style="margin-top:8px" id="fb-go" onclick="submitFeedback()">提交反馈</button>
+    </div>
+    <div class="card">
       <div class="sub" style="line-height:1.8">WHU二手书市 · 网页版 v1.0<br>平台仅提供信息展示，不参与交易。<br>线下交易请当面验书、当面付款。</div>
     </div>
     <button class="btn danger" onclick="logout()">退出登录</button>
     <input type="file" id="av-file" accept="image/*" class="hidden">`;
 }
+async function submitFeedback() {
+  const text = ($('#fb-text') || {}).value?.trim() || '';
+  if (text.length < 5) return toast('反馈内容至少 5 个字');
+  if (text.length > 500) return toast('反馈内容最多 500 字');
+  const btn = $('#fb-go'); btn.disabled = true;
+  try {
+    await POST('/feedback', { content: text });
+    toast('感谢反馈！已直达开发者');
+    $('#fb-text').value = '';
+    btn.disabled = false;
+  } catch (e) { btn.disabled = false; toast(e.message); }
+}
+
 function logout() {
   if (!confirm('退出登录？')) return;
   setToken(''); ws?.close(); ws = null; clearInterval(chatPoll);
