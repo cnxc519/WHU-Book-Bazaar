@@ -275,3 +275,8 @@ h2.sec { font-size: 16px; font-weight: 800; margin: 6px 4px 12px; }
   max-width: 100%; max-height: calc(100vh - 140px);
   border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
 }
+
+/* ---------- 注册协议勾选行：勾选框紧贴文字 ---------- */
+.agree-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; }
+.agree-row input { width: 15px; height: 15px; margin: 2px 0 0; flex-shrink: 0; accent-color: #0f8a5f; cursor: pointer; }
+.agree-row label { font-size: 12px; color: var(--sub); line-height: 1.55; margin: 0; cursor: pointer; }

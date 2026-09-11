@@ -188,7 +188,7 @@ function vLogin() {
       <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div></div>
     ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
     <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
-    <div class="row" style="margin-top:6px"><input type="checkbox" id="lg-agree" checked><label for="lg-agree" style="margin:0">我已阅读并同意以上协议</label></div></div>
+    <div class="agree-row"><input type="checkbox" id="lg-agree" checked><label for="lg-agree">我已阅读并同意以上协议</label></div></div>
     <button class="btn" id="lg-finish">完成注册</button>`;
 
   $('#view').innerHTML = `
