@@ -1,7 +1,7 @@
 // JWT 鉴权中间件
 const jwt = require('jsonwebtoken');
 const { cfg } = require('./config');
-const { db } = require('./db');
+const { db, recordActivity } = require('./db');
 const { fail, e401 } = require('./util');
 
 const USER_TOKEN_TTL = '30d';
@@ -24,6 +24,7 @@ function requireUser(req, res, next) {
   const user = db.prepare(`SELECT * FROM users WHERE id=?`).get(payload.uid);
   if (!user) return e401(res, '账号不存在');
   if (user.banned) return fail(res, '账号已被封禁', 403, 'BANNED');
+  recordActivity(user.id); // 日活统计（幂等，每用户每天一行）
   req.user = user;
   next();
 }

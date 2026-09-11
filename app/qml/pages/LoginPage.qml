@@ -87,7 +87,7 @@ Item {
                                 font.weight: Font.Black
                             }
                             Text {
-                                text: "教材课本 · 好书流转一个学期"
+                                text: "教材课本 · 让好书继续流转"
                                 color: "#E0FFFFFF"
                                 font.pixelSize: 12
                             }

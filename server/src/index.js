@@ -102,7 +102,7 @@ app.get('/d', (req, res) => {
 <div class="wrap">
   <img class="logo" src="/appicon.png" alt="WHU二手书市">
   <h1>WHU二手书市</h1>
-  <div class="sub">校园二手书市 · 好书流转一个学期</div>
+  <div class="sub">校园二手书市 · 让好书继续流转</div>
   <div class="card">
     ${hasApk ? `<span class="ver">最新版本 v${s.version_code || '?'}</span>
     ${note ? `<div class="note">${note.replace(/</g, '&lt;')}</div>` : ''}

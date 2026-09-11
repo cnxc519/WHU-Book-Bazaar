@@ -170,7 +170,7 @@ function vLogin() {
     <div style="background:radial-gradient(circle at 85% -20%,rgba(255,255,255,.15) 0 70px,transparent 71px),linear-gradient(135deg,#0d7a54,#12a06f);color:#fff;border-radius:0 0 26px 26px;margin:-12px -14px 18px;padding:42px 26px 60px">
       <div style="font-size:30px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:12px">
         <img src="/appicon.png" style="width:46px;height:46px">WHU二手书市</div>
-      <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 好书流转一个学期</div>
+      <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 让好书继续流转</div>
     </div>
     <div class="card overlap">
       <div class="field"><label>邮箱（武大邮箱或其他邮箱均可）</label><input id="lg-email" type="email" placeholder="邮箱"></div>

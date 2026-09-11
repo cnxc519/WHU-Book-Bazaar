@@ -128,6 +128,11 @@ CREATE TABLE IF NOT EXISTS book_messages(
   lon REAL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS active_days(
+  user_id INTEGER NOT NULL,
+  day TEXT NOT NULL,              -- 北京时间 YYYY-MM-DD
+  PRIMARY KEY(user_id, day)
+);
 CREATE TABLE IF NOT EXISTS book_reports(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   book_id INTEGER NOT NULL,
@@ -185,4 +190,24 @@ function setSetting(k, v) {
   db.prepare(`INSERT INTO settings(k,v) VALUES(?,?) ON CONFLICT(k) DO UPDATE SET v=excluded.v`).run(k, String(v));
 }
 
-module.exports = { db, tx, getSettings, setSetting };
+// 北京时间日期键（与 util.js todayKey 一致；db.js 不反向 require util 防循环依赖）
+const bjDay = (offsetDays = 0) => new Date(Date.now() + 8 * 3600 * 1000 - offsetDays * 86400000).toISOString().slice(0, 10);
+
+// 活跃统计：每个登录用户每天记一行（幂等），DAU/WAU/MAU 按此去重统计
+function recordActivity(uid) {
+  try {
+    db.prepare(`INSERT OR IGNORE INTO active_days(user_id, day) VALUES(?, ?)`).run(uid, bjDay(0));
+  } catch (e) { console.log('[stats] 记录活跃失败:', e.message); }
+}
+function activeStats() {
+  const today = bjDay(0);
+  const weekAgo = bjDay(7);
+  const monthAgo = bjDay(30);
+  return {
+    dau: db.prepare(`SELECT COUNT(DISTINCT user_id) c FROM active_days WHERE day=?`).get(today).c,
+    wau: db.prepare(`SELECT COUNT(DISTINCT user_id) c FROM active_days WHERE day>=?`).get(weekAgo).c,
+    mau: db.prepare(`SELECT COUNT(DISTINCT user_id) c FROM active_days WHERE day>=?`).get(monthAgo).c,
+  };
+}
+
+module.exports = { db, tx, getSettings, setSetting, recordActivity, activeStats };

@@ -4,7 +4,7 @@ const fs = require('fs');
 const express = require('express');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
-const { db, getSettings, setSetting } = require('../db');
+const { db, getSettings, setSetting, activeStats } = require('../db');
 const { cfg } = require('../config');
 const { signAdminToken, requireAdmin } = require('../auth');
 const { ok, fail, clampInt, nowTs } = require('../util');
@@ -31,6 +31,7 @@ router.get('/dashboard', (req, res) => {
     users: db.prepare(`SELECT COUNT(*) c FROM users WHERE id!=0`).get().c,
     books_on: db.prepare(`SELECT COUNT(*) c FROM books WHERE status='on'`).get().c,
     open_book_reports: db.prepare(`SELECT COUNT(*) c FROM book_reports WHERE status='open'`).get().c,
+    ...activeStats(),
     settings: getSettings(),
   });
 });

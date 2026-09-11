@@ -74,6 +74,10 @@ async function vDashboard() {
     const d = await api('GET', '/dashboard');
     render(`
       <div class="stat-grid">
+        <div class="stat"><div class="num">${d.dau}</div><div class="lbl">今日活跃</div></div>
+        <div class="stat"><div class="num">${d.wau}</div><div class="lbl">周活跃</div></div>
+        <div class="stat"><div class="num">${d.mau}</div><div class="lbl">月活跃</div></div>
+        <div class="stat"><div class="num">${d.users}</div><div class="lbl">注册用户</div></div>
         <div class="stat"><div class="num">${d.books_on}</div><div class="lbl">书市在售</div></div>
         <div class="stat"><div class="num">${d.open_book_reports}</div><div class="lbl">待处理书举报</div></div>
       </div>
