@@ -202,7 +202,9 @@ function vLogin() {
       <div class="center muted" style="margin-top:12px">售卖闲置教材，请当面验书、当面付款</div>
     </div>`;
 
-  bindCode('#lg-email', '#lg-send', 'login');
+  // 第二步没有验证码行和登录按钮，绑定必须按步骤区分（否则 null.onclick 报错中断，
+  // 后面的 loadSchools 也不会执行——学校就会一直卡在"加载中"）
+  if (loginStep === 1) bindCode('#lg-email', '#lg-send', 'login');
   let gender = '';
   document.querySelectorAll('#lg-gender .chip').forEach((c) => c.onclick = () => {
     gender = c.dataset.v;
@@ -220,9 +222,10 @@ function vLogin() {
   if (loginStep === 2) loadSchools();
 
   // 第一步：验证码校验 → 已注册登录 / 未注册进入第二步
-  $('#lg-btn').onclick = async () => {
-    loginEmail = $('#lg-email').value.trim();
-    const code = $('#lg-code').value.trim();
+  const lgBtn = $('#lg-btn');
+  if (lgBtn) lgBtn.onclick = async () => {
+    loginEmail = ($('#lg-email') || {}).value?.trim() || loginEmail;
+    const code = ($('#lg-code') || {}).value?.trim() || '';
     if (!loginEmail) return toast('请填写邮箱');
     if (!code) return toast('请填写验证码');
     const btn = $('#lg-btn'); btn.disabled = true;
