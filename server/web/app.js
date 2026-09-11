@@ -180,8 +180,7 @@ function vLogin() {
   const step1 = `
     <div class="field"><label>邮箱（武大邮箱或其他邮箱均可）</label><input id="lg-email" type="email" placeholder="邮箱"></div>
     <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
-    <button class="btn" id="lg-btn">登录 / 注册</button>
-    <div class="center muted" style="margin-top:12px">未注册将自动进入注册，验证码不会白发</div>`;
+    <button class="btn" id="lg-btn">登录 / 注册</button>`;
   const step2 = `
     <div class="field"><label>昵称（1-20 字）</label><input id="lg-nick" placeholder="给自己起个昵称"></div>
     <div class="field"><label>学校</label><select id="lg-school"><option value="">加载中…</option></select></div>
