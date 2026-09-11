@@ -25,4 +25,17 @@ function gradeWindow(now = chinaNow()) {
   };
 }
 
-module.exports = { userPublic, gradeWindow };
+// 模糊搜索：包含 或 子序列命中（"线代"命中"线性代数"、"高数"命中"高等数学"）。
+// 书市与心愿单共用
+function fuzzyHit(needle, hay) {
+  hay = String(hay || '').toLowerCase();
+  if (!needle) return true;
+  if (hay.indexOf(needle) >= 0) return true;
+  let i = 0;
+  for (let k = 0; k < hay.length && i < needle.length; k++) {
+    if (hay[k] === needle[i]) i++;
+  }
+  return i >= needle.length;
+}
+
+module.exports = { userPublic, gradeWindow, fuzzyHit };

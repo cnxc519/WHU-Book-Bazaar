@@ -28,6 +28,18 @@ function notifyFirstContact(sellerEmail, bookTitle, buyerNickname) {
   }).catch((e) => console.error('[mailer] 首次联系提醒发送失败:', e.message));
 }
 
+// 重要消息邮件：卖家第一次联系某条心愿时提醒心愿发布者（买家）。
+// 与 notifyFirstContact 同策略：失败只记日志
+function notifyWishContact(buyerEmail, wishTitle, sellerNickname) {
+  if (!transporter || !buyerEmail) return;
+  const text = `卖家 ${sellerNickname} 想出售你心愿单里的《${wishTitle}》，//请打开 App「消息」回复 TA，聊好版本品相当面交易。`
+      .replace('//', '，');
+  transporter.sendMail({
+    from: cfg.mail_from, to: buyerEmail,
+    subject: `【WHU二手书市】有人想卖你心愿里的《${wishTitle}》`, text,
+  }).catch((e) => console.error('[mailer] 心愿首次联系提醒发送失败:', e.message));
+}
+
 // 生成并发送验证码。返回 {ok, msg}；开发模式额外返回 code。
 // 正式模式会真正等待 SMTP 发送结果（15 秒超时）：发不出去就明确报错，
 // 避免接口返回"已发送"但用户永远收不到邮件、验证码只躺在服务器控制台
@@ -80,4 +92,4 @@ function verifyCode(email, purpose, code) {
   return { ok: true, msg: 'ok' };
 }
 
-module.exports = { sendCode, verifyCode, notifyFirstContact };
+module.exports = { sendCode, verifyCode, notifyFirstContact, notifyWishContact };

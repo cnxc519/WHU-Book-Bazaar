@@ -89,10 +89,10 @@ function wsConnect() {
       try {
         const ev = JSON.parse(e.data);
         if (ev.t === 'notif') { loadBell(); if (location.hash.startsWith('#/notifications')) render(); }
-        if (ev.t === 'bchat') {
+        if (ev.t === 'bchat' || ev.t === 'wchat') {
           loadMsgBadge();
           if (location.hash.startsWith('#/inbox')) render();
-          const m = location.hash.match(/^#\/chat\/(\d+)/);
+          const m = location.hash.match(/^#\/chat\/(?:wish\/|book\/)?(\d+)/);
           if (m && String(ev.chat_id) === m[1]) render();
         }
       } catch {}
@@ -114,11 +114,13 @@ async function loadBell() {
 async function loadMsgBadge() {
   if (!isLogin()) return;
   try {
-    const d = await GET('/book-chats/unread-count');
-    const n = d.count ?? d.unread ?? 0;
-    const b = $('#tab-msg-badge');
-    b.textContent = n;
-    b.classList.toggle('hidden', !n);
+    // 书市聊天 + 心愿聊天未读相加（两模式共用一个消息 Tab）
+    const [b, w] = await Promise.all([GET('/book-chats/unread-count'), GET('/wish-chats/unread-count')]);
+    const n = (b.count ?? b.unread ?? 0) + (w.count ?? w.unread ?? 0);
+    const el = $('#tab-msg-badge');
+    if (!el) return;
+    el.textContent = n;
+    el.classList.toggle('hidden', !n);
   } catch {}
 }
 
@@ -126,6 +128,7 @@ async function loadMsgBadge() {
 const routes = {
   '#/login': vLogin, '#/register': vRegister,
   '#/browse': vBrowse, '#/book': vBook, '#/sell': vSell,
+  '#/wishpost': vWishpost, '#/wishlist': vWishlist, '#/wish': vWishDetail,
   '#/inbox': vInbox, '#/chat': vChat,
   '#/notifications': vNotifications,
   '#/invite': vInvite, '#/me': vMe, '#/user': vUser,
@@ -136,12 +139,53 @@ function go(hash) { location.hash = hash; }
 // 必须手动 render —— 登录成功后曾因此卡在登录页（URL 已变视图未变）
 function navTo(hash) { if (location.hash === hash) render(); else location.hash = hash; }
 
-// 摆放示例灯箱：展示标准摆拍照片，点击任意处关闭
-function showExample(ev) {
+// ---------- 想买书 / 想卖书 双模式（形态参考乐乐代跑底部模式切换条） ----------
+// 想买书：[书市][求购] + 消息/邀请/我的；想卖书：[心愿单][卖书] + 消息/邀请/我的。
+// 消息/邀请/我的两模式共用，聊天合并展示；选择本地记住，切换回到该模式首 Tab
+let bookMode = localStorage.getItem('whu_mode') === 'sell' ? 'sell' : 'buy';
+function setMode(m) {
+  if (bookMode === m) return;
+  bookMode = m;
+  localStorage.setItem('whu_mode', m);
+  renderTabbar();
+  // 不经过 render 的场景（详情页等）也要同步切换条高亮
+  $('#mode-buy').classList.toggle('on', m === 'buy');
+  $('#mode-sell').classList.toggle('on', m === 'sell');
+  // 停在另一模式专属 Tab 时跳到当前模式首 Tab；详情页等页面保持原地
+  const modeTabHashes = ['#/browse', '#/wishpost', '#/wishlist', '#/sell'];
+  if (modeTabHashes.includes((location.hash || '').split('?')[0])) {
+    navTo(bookMode === 'buy' ? '#/browse' : '#/wishlist');
+  }
+}
+const TAB_SVGS = {
+  browse: '<svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
+  wishpost: '<svg viewBox="0 0 24 24"><path d="M12 20h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M16.5 3.5l4 4L7 21l-4 1 1-4z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  wishlist: '<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 8h6M9 12h6M9 16h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  sell: '<svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 7.5L12 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  inbox: '<svg viewBox="0 0 24 24"><path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 4v-4H6a2 2 0 0 1-2-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+  invite: '<svg viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 11l8 5 8-5M12 3v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  me: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+};
+function renderTabbar() {
+  const tabs = bookMode === 'buy'
+    ? [['#/browse', '书市'], ['#/wishpost', '求购']]
+    : [['#/wishlist', '心愿单'], ['#/sell', '卖书']];
+  const shared = [['#/inbox', '消息', true], ['#/invite', '邀请'], ['#/me', '我的']];
+  $('#tabbar').innerHTML = [...tabs, ...shared].map(([r, label, withBadge]) =>
+    `<a data-r="${r}" onclick="go('${r}')">${TAB_SVGS[r.slice(2)] || ''}<span>${label}</span>${withBadge ? '<span id="tab-msg-badge" class="badge hidden"></span>' : ''}</a>`
+  ).join('');
+}
+
+// 摆放示例灯箱：展示标准摆拍/书单示例照片，点击任意处关闭
+function showExample(ev, img) {
   ev?.stopPropagation();
+  const src = img || '/example-books.jpg';
+  const tip = src.includes('wish')
+    ? '像这样把书单拍清楚 ↑ 已划掉的书 AI 会自动排除，只认需要买的书'
+    : '像这样把书竖直排开、书名朝外拍一张 ↑ 点击任意处关闭';
   const ov = document.createElement('div');
   ov.className = 'img-overlay';
-  ov.innerHTML = `<div class="img-box"><img src="/example-books.jpg" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">像这样把书竖直排开、书名朝外拍一张 ↑ 点击任意处关闭</div></div>`;
+  ov.innerHTML = `<div class="img-box"><img src="${src}" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">${tip}</div></div>`;
   ov.onclick = () => ov.remove();
   document.body.appendChild(ov);
 }
@@ -155,6 +199,12 @@ function render() {
   $('#topbar').classList.toggle('hidden', !logged);
   $('#bell').classList.toggle('hidden', !logged || hash.startsWith('#/notifications'));
   $('#tabbar').classList.toggle('hidden', !logged);
+  $('#modewrap').classList.toggle('hidden', !logged);
+  if (logged) {
+    renderTabbar();
+    $('#mode-buy').classList.toggle('on', bookMode === 'buy');
+    $('#mode-sell').classList.toggle('on', bookMode === 'sell');
+  }
   document.querySelectorAll('#tabbar a').forEach((a) => a.classList.toggle('on', hash.startsWith(a.dataset.r)));
   $('#view').className = '';
   const fn = routes[hash.split('/').slice(0, 2).join('/')] || (logged ? vBrowse : vLogin);
@@ -673,41 +723,388 @@ function changeCover(id, ev) {
   inp.click();
 }
 
+// ---------- 心愿单（求购）：浏览 / 发布 / 详情 ----------
+// 需求侧：无价格，多一个"可自提"标记；图片选填（可放学校书单截图，AI 会识别并排除已划掉的书）
+let wishQ = '', wishSort = 'latest';
+function vWishlist() {
+  $('#view').innerHTML = `
+    <div class="card search-card">
+      <div class="search-row">
+        <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="wq" placeholder="搜心愿书名 / 课程 / 说明" value="${esc(wishQ)}">
+        <button id="wq-go">搜索</button>
+      </div>
+      <div class="chips" style="margin-top:12px">
+        <button class="chip ${wishSort === 'latest' ? 'on' : ''}" data-s="latest">最新发布</button>
+        <button class="chip ${wishSort === 'pickup' ? 'on' : ''}" data-s="pickup">🤝 可自提优先</button>
+      </div>
+    </div>
+    <div id="wlist"><div class="empty">加载中…</div></div>`;
+  $('#wq-go').onclick = () => { wishQ = $('#wq').value.trim(); loadWishlist(); };
+  $('#wq').onkeydown = (e) => { if (e.key === 'Enter') { wishQ = $('#wq').value.trim(); loadWishlist(); } };
+  document.querySelectorAll('.chips .chip').forEach((c) => c.onclick = () => { wishSort = c.dataset.s; vWishlist(); });
+  loadWishlist();
+}
+async function loadWishlist() {
+  $('#wlist').innerHTML = '<div class="empty">加载中…</div>';
+  try {
+    const d = await GET(`/wishes?q=${encodeURIComponent(wishQ)}&sort=${wishSort}`);
+    if (!d.list.length) {
+      $('#wlist').innerHTML = '<div class="empty"><div class="big">🙏</div>还没有人发心愿<br>切到「想买书」发布第一条求购吧</div>';
+      return;
+    }
+    $('#wlist').innerHTML = d.list.map(wishCardHtml).join('');
+    document.querySelectorAll('#wlist .book-card').forEach((el) => el.onclick = () => go('#/wish/' + el.dataset.id));
+  } catch (e) { $('#wlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+function wishCardHtml(w) {
+  const cover = w.photo ? `<img class="cover" src="/files/wishes/${w.id}.jpg" onerror="this.style.visibility='hidden'">` : `<div class="cover">🙏</div>`;
+  const pickup = w.pickup_ok ? `<div class="bc-price small" style="color:var(--brand)">🤝 可自提</div>` : '';
+  return `<div class="book-card" data-id="${w.id}">
+    ${cover}
+    <div class="bc-body">
+      <div class="bc-title">${esc(w.title)}</div>
+      ${w.note ? `<div class="bc-note">${esc(w.note)}</div>` : ''}
+      <div style="margin-top:3px">${w.is_mine ? '<span class="tag" style="background:var(--brand-soft);color:var(--brand)">📌 我的</span>' : ''}${w.course ? `<span class="tag gray">📘 ${esc(w.course)}</span>` : ''}${w.location ? `<span class="tag gray">📍 ${esc(w.location)}</span>` : ''}</div>
+      <div class="bc-meta">🙋 ${esc(w.buyer?.nickname || '')} · ${esc(w.school || '')} · ${fmtTime(w.created_at)}</div>
+    </div>
+    ${pickup}
+  </div>`;
+}
+
+// ---------- 发心愿（求购页，想买书模式） ----------
+let wishMode = 'batch';
+let wishImg = '';           // 压缩后的书单/参考图 dataUrl（选填）
+let wishTitles = [];
+let editWishCover = 0;      // 换参考图的心愿 id
+
+function vWishpost() {
+  const batch = wishMode === 'batch';
+  $('#view').innerHTML = `
+    <div class="card">
+      <div style="font-size:16px;font-weight:800;margin-bottom:10px">发布求购心愿</div>
+      <div class="chips" style="margin-bottom:12px">
+        <button class="chip ${batch ? 'on' : ''}" id="wm-batch">📋 批量发心愿</button>
+        <button class="chip ${!batch ? 'on' : ''}" id="wm-single">📝 单条心愿</button>
+      </div>
+      <div id="wish-body"></div>
+    </div>
+    <h2 class="sec" id="mywish-count">我的心愿</h2>
+    <div id="mywish-list"><div class="empty">加载中…</div></div>`;
+  $('#wm-batch').onclick = () => { wishMode = 'batch'; vWishpost(); };
+  $('#wm-single').onclick = () => { wishMode = 'single'; vWishpost(); };
+  $('#wish-body').innerHTML = batch ? wishBatchHtml() : wishSingleHtml();
+  if (batch) bindWishBatch(); else bindWishSingle();
+  loadMyWishes();
+}
+function wishBatchHtml() {
+  return `
+    <div class="muted" style="margin-bottom:10px">把书单（教材征订单、Excel 截图都可以）拍一张照，AI 帮你认出需要买的书名（已划掉的书会自动排除），核对后一次全部发布心愿。</div>
+    <div class="row" style="align-items:flex-start">
+      <div class="up-box" id="wup-box" onclick="$('#wish-file').click()">${wishImg ? `<img src="${wishImg}">` : '📷<br>拍书单'}</div>
+      <div class="grow">
+        <div class="sub" style="line-height:1.6;margin-bottom:8px">图片选填：不传图也可以发心愿。传学校书单截图的话，AI 只认<b>需要买</b>的书（划掉的不算）。不知道怎么给？看<span class="linkish" onclick="showExample(event, '/example-wish.jpg')">示例图片</span>。</div>
+        <button class="btn small ${wishImg ? '' : 'ghost'}" id="wai-btn">🤖 AI 识别书名</button>
+      </div>
+    </div>
+    <input type="file" id="wish-file" accept="image/*" class="hidden">
+    <div class="field" style="margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <label style="margin-bottom:0">书名（识别后请核对，可增删改）</label>
+        <button class="chip small" id="wadd-one" type="button">+ 添加一本</button>
+      </div>
+      <div id="wtitles" style="margin-top:9px"></div>
+    </div>
+    <div class="field"><label>交易地点（必填，所有心愿共用）</label><input id="wt-loc" placeholder="方便卖家约的地点，如：湖滨寓园门口"></div>
+    <div class="field"><label>可自提</label><div class="chips" id="wt-pickup">
+      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，希望送到附近</button></div>
+      <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 1px">选"可自提"卖家不用跑腿，更容易等到这本书</div></div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <button class="btn" id="wt-go"></button>`;
+}
+function wishSingleHtml() {
+  return `
+    <div class="field"><label>书名（必填，1-40 字）</label><input id="ws-title" placeholder="例如：高等数学（第七版）下册 同济版"></div>
+    <div class="field"><label>对应课程（选填）</label><input id="ws-course" placeholder="例如：高等数学 AB"></div>
+    <div class="field"><label>补充说明（选填，≤300 字）</label><textarea id="ws-note" rows="2" placeholder="版本/作者/品相要求等，例如：旧版就行，笔记多也没关系"></textarea></div>
+    <div class="field"><label>交易地点（必填）</label><input id="ws-loc" placeholder="方便卖家约的地点"></div>
+    <div class="field"><label>可自提</label><div class="chips" id="ws-pickup">
+      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，希望送到附近</button></div></div>
+    <div class="field"><label>参考图（选填，如学校书单截图）<button class="chip small" style="float:right" id="ws-extra-toggle">${wishImg ? '收起参考图 ▲' : '加参考图 ▼'}</button></label>
+      <div id="ws-extra" style="display:${wishImg ? 'block' : 'none'}">
+      <div class="row"><div class="up-box" id="ws-upbox" onclick="$('#ws-file').click()">${wishImg ? `<img src="${wishImg}">` : '📷<br>加图片'}</div>
+      <div class="grow sub">选填；放书单截图方便卖家对照</div></div>
+      <input type="file" id="ws-file" accept="image/*" class="hidden">
+    </div></div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <button class="btn" id="ws-go">发布心愿</button>`;
+}
+let wishPickup = 1; // 0/1，可自提（默认可以上门取，更容易等到这本书）
+function bindWishChips(sel) {
+  document.querySelectorAll(`${sel} .chip`).forEach((c) => c.onclick = () => {
+    wishPickup = +c.dataset.v;
+    document.querySelectorAll(`${sel} .chip`).forEach((x) => x.classList.toggle('on', x === c));
+  });
+  document.querySelectorAll(`${sel} .chip`).forEach((c) => c.classList.toggle('on', +c.dataset.v === wishPickup));
+}
+function renderWishTitles() {
+  $('#wtitles').innerHTML = wishTitles.length
+    ? wishTitles.map((t, i) => `<div class="row" style="margin-bottom:8px"><input class="grow wt-title" data-i="${i}" value="${esc(t)}" placeholder="书名（1-40 字）"><button class="btn small danger" onclick="wishTitles.splice(${i},1);renderWishTitles()">✕</button></div>`).join('')
+    : '<div class="muted">还没添加书：选好书单照片后点「AI 识别书名」自动认出，也可以「+ 添加一本」手动填。</div>';
+  const n = wishTitles.filter((t) => t.trim()).length;
+  $('#wt-go').textContent = `${n} 条全部发布`;
+}
+function bindWishBatch() {
+  renderWishTitles();
+  bindWishChips('#wt-pickup');
+  // 输入事件挂容器（事件委托）：行 DOM 会随增删重建，逐行绑定会丢（书市那边踩过的坑）
+  $('#wtitles').addEventListener('input', (e) => {
+    const inp = e.target.closest('.wt-title');
+    if (!inp) return;
+    wishTitles[+inp.dataset.i] = inp.value;
+    const n = wishTitles.filter((t) => t.trim()).length;
+    $('#wt-go').textContent = `${n} 条全部发布`;
+  });
+  $('#wadd-one').onclick = () => { wishTitles.push(''); renderWishTitles(); const inputs = document.querySelectorAll('.wt-title'); inputs[inputs.length - 1]?.focus(); };
+  $('#wish-file').onchange = async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      wishImg = await compressImage(f, 1600, 500);
+      $('#wup-box').innerHTML = `<img src="${wishImg}">`;
+      $('#wai-btn').classList.remove('ghost');
+      toast('已选书单图片，点「AI 识别书名」开始识别');
+    } catch (err) { toast(err.message); }
+  };
+  $('#wai-btn').onclick = async () => {
+    if (!wishImg) return toast('请先选书单照片');
+    const go2 = async () => {
+      $('#wai-btn').disabled = true; $('#wai-btn').textContent = '图片识别处理中，约需 20 秒…';
+      try {
+        const fd = new FormData();
+        fd.append('file', dataUrlToBlob(wishImg), 'photo.jpg');
+        const d = await api('POST', '/wishes/batch/analyze', fd, true);
+        wishTitles = d.titles.slice();
+        renderWishTitles();
+        toast(`识别出 ${d.titles.length} 本要买的书，请核对增删改`);
+      } catch (e) { toast(e.message); }
+      $('#wai-btn').disabled = false; $('#wai-btn').textContent = '🤖 AI 识别书名';
+    };
+    if (wishTitles.some((t) => t.trim())) {
+      if (confirm('重新识别会覆盖你现在填写的书名列表，继续？')) go2();
+    } else go2();
+  };
+  $('#wt-go').onclick = async () => {
+    const titles = wishTitles.map((t) => t.trim()).filter(Boolean);
+    if (!titles.length) return toast('请至少填写一个书名');
+    if (titles.length > 20) return toast('一次最多发布 20 条心愿');
+    const loc = $('#wt-loc').value.trim();
+    if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
+    if (!confirm(`将一次发布 ${titles.length} 条求购心愿：共用地点「${loc}」${wishPickup ? '、标记可自提' : ''}。有卖家联系你时会邮件通知你。确认发布？`)) return;
+    const btn = $('#wt-go'); btn.disabled = true; btn.textContent = '发布中…';
+    try {
+      const fd = new FormData();
+      fd.append('titles', JSON.stringify(titles));
+      fd.append('location', loc);
+      fd.append('pickup_ok', wishPickup ? '1' : '0');
+      if (wishImg) fd.append('file', dataUrlToBlob(wishImg), 'wish.jpg');
+      const d = await api('POST', '/wishes/batch', fd, true);
+      toast(`已发布 ${d.count} 条心愿！`);
+      wishTitles = []; wishImg = '';
+      vWishpost();
+    } catch (e) { btn.disabled = false; btn.textContent = `${titles.length} 条全部发布`; toast(e.message); }
+  };
+}
+function bindWishSingle() {
+  bindWishChips('#ws-pickup');
+  $('#ws-extra-toggle').onclick = () => {
+    const box = $('#ws-extra');
+    const open = box.style.display !== 'none';
+    box.style.display = open ? 'none' : 'block';
+    $('#ws-extra-toggle').textContent = open ? '加参考图 ▼' : '收起参考图 ▲';
+  };
+  $('#ws-file').onchange = async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      wishImg = await compressImage(f, 800, 200);
+      $('#ws-upbox').innerHTML = `<img src="${wishImg}">`;
+    } catch (err) { toast(err.message); }
+  };
+  $('#ws-go').onclick = async () => {
+    const title = $('#ws-title').value.trim();
+    const course = $('#ws-course').value.trim();
+    const note = $('#ws-note').value.trim();
+    const loc = $('#ws-loc').value.trim();
+    if (title.length < 1) return toast('请填写书名');
+    if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
+    const btn = $('#ws-go'); btn.disabled = true;
+    try {
+      const d = await POST('/wishes', { title, course, note, location: loc, pickup_ok: wishPickup });
+      if (wishImg) {
+        const fd = new FormData();
+        fd.append('file', dataUrlToBlob(wishImg), 'wish.jpg');
+        await api('POST', `/wishes/${d.id}/photo`, fd, true);
+      }
+      toast('心愿已发布！');
+      wishImg = '';
+      vWishpost();
+    } catch (e) { btn.disabled = false; toast(e.message); }
+  };
+}
+async function loadMyWishes() {
+  try {
+    const d = await GET('/wishes/mine');
+    const head = $('#mywish-count');
+    if (head) head.textContent = `我的心愿（${d.list.length}）`;
+    $('#mywish-list').innerHTML = d.list.length ? d.list.map((w) => {
+      const st = w.status === 'on' ? '<span class="tag">显示中</span>' : '<span class="tag gray">已下架</span>';
+      return `<div class="book-card" data-id="${w.id}" onclick="go('#/wish/${w.id}')">
+        ${w.photo ? `<img class="cover" src="/files/wishes/${w.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">🙏</div>'}
+        <div class="bc-body">
+          <div class="bc-title">${esc(w.title)}</div>
+          <div style="margin-top:3px">${st}${w.pickup_ok ? '<span class="tag" style="background:var(--brand-soft);color:var(--brand)">🤝 可自提</span>' : ''}${w.unread_chats > 0 ? `<span class="tag red">💬 ${w.unread_chats} 未读</span>` : ''}</div>
+          <div class="bc-meta">🙋 ${esc(w.buyer?.nickname || '')} · ${fmtTime(w.created_at)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn small ghost" onclick="event.stopPropagation();wishSetStatus(${w.id},'${w.status === 'on' ? 'off' : 'on'}')">${w.status === 'on' ? '下架' : '重新上架'}</button>
+          <button class="btn small danger" onclick="event.stopPropagation();wishSetStatus(${w.id},'done')">已买到</button>
+          <button class="btn small ghost" onclick="event.stopPropagation();changeWishPhoto(${w.id}, event)">换图</button>
+        </div>
+      </div>`;
+    }).join('') : '<div class="empty">还没有发过心愿</div>';
+  } catch (e) { $('#mywish-list').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+}
+async function wishSetStatus(id, st) {
+  try {
+    await POST(`/wishes/${id}/status`, { status: st });
+    toast(st === 'done' ? '已标记买到，心愿删除' : '已更新');
+    loadMyWishes();
+  } catch (e) { toast(e.message); }
+}
+function changeWishPhoto(id, ev) {
+  ev?.stopPropagation();
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*';
+  inp.onchange = async () => {
+    if (!inp.files[0]) return;
+    try {
+      const img = await compressImage(inp.files[0], 800, 200);
+      const fd = new FormData();
+      fd.append('file', dataUrlToBlob(img), 'wish.jpg');
+      await api('POST', `/wishes/${id}/photo`, fd, true);
+      toast('参考图已更新'); loadMyWishes();
+    } catch (e) { toast(e.message); }
+  };
+  inp.click();
+}
+
+// ---------- 心愿详情 ----------
+async function vWishDetail(hash) {
+  const id = hash.split('/')[2];
+  if (!id) return navTo('#/wishlist');
+  const d = await GET('/wishes/' + id);
+  const cover = d.photo ? `<div class="detail-cover"><img src="/files/wishes/${d.id}.jpg" onerror="this.parentNode.innerHTML='<div style=padding:60px>🙏</div>'"></div>` : '';
+  $('#view').innerHTML = `
+    ${cover}
+    <div class="row" style="align-items:flex-start;margin:12px 2px 6px">
+      <div class="grow"><div class="d-title" style="margin:0">${esc(d.title)}</div></div>
+      ${d.pickup_ok ? '<span class="d-note" style="color:var(--brand)">🤝 可自提</span>' : ''}
+    </div>
+    <div style="margin:0 2px 10px">
+      ${d.status === 'on' ? '<span class="tag">求购中</span>' : '<span class="tag gray">已下架</span>'}
+      ${d.course ? `<span class="tag gray">📘 ${esc(d.course)}</span>` : ''}
+      ${d.location ? `<span class="tag gray">📍 ${esc(d.location)}</span>` : ''}
+    </div>
+    ${d.note ? `<div class="card"><div class="sub" style="margin-bottom:4px">补充说明</div>${esc(d.note)}</div>` : ''}
+    <div class="card seller-card">
+      <div class="avatar">${esc((d.buyer?.nickname || '友')[0])}</div>
+      <div class="grow">
+        <div style="font-weight:700">${esc(d.buyer?.nickname || '')} 想买这本书</div>
+        <div class="sub">在售 ${d.buyer?.books_on ?? 0} 本 · 注册 ${fmtTime(d.buyer?.created_at)}</div>
+      </div>
+      <button class="btn small ghost" onclick="go('#/user/${d.buyer?.id}')">看主页</button>
+    </div>
+    <div class="card tips-card">
+      <div class="sub">平台仅提供信息展示与联系，不参与交易：先聊清<b>版本与品相</b>，<b>见面当面验书、满意再付款</b>。</div>
+    </div>
+    ${d.is_mine
+      ? `<button class="btn ghost" onclick="go('#/wishpost')">管理我的心愿（求购页）</button>`
+      : (d.my_thread
+        ? `<button class="btn" onclick="go('#/chat/wish/${d.my_thread.chat_id}')">继续聊天</button>`
+        : (d.status === 'on' ? `<button class="btn" id="wish-contact-btn">💬 我有这本书，联系 TA</button>` : ''))}`;
+  const cb = $('#wish-contact-btn');
+  if (cb) cb.onclick = async () => {
+    cb.disabled = true;
+    try {
+      const r = await POST(`/wishes/${id}/contact`, {});
+      toast('已联系心愿主，去消息里聊吧');
+      go('#/chat/wish/' + r.chat_id);
+    } catch (e) { cb.disabled = false; toast(e.message); }
+  };
+}
+
 // ---------- 消息（会话列表） ----------
 async function vInbox() {
-  const d = await GET('/book-chats');
-  $('#view').innerHTML = `<h2 class="sec">书市消息</h2><div id="chat-rows">${
-    d.list.length ? d.list.map((c) => `
-      <div class="chat-row" onclick="go('#/chat/${c.id}')">
-        ${c.book?.photo ? `<img class="cover" src="/files/books/${c.book.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">📖</div>'}
+  // 书市聊天 + 心愿聊天合并展示，按最后消息时间排序（两模式共用消息 Tab）
+  const [b, w] = await Promise.all([GET('/book-chats'), GET('/wish-chats')]);
+  const rows = [
+    ...b.list.map((c) => ({ ...c, kind: 'book' })),
+    ...w.list.map((c) => ({ ...c, kind: 'wish' })),
+  ].sort((x, y) => (y.last_message?.created_at || 0) - (x.last_message?.created_at || 0));
+  $('#view').innerHTML = `<h2 class="sec">消息</h2><div id="chat-rows">${
+    rows.length ? rows.map((c) => {
+      const isWish = c.kind === 'wish';
+      const title = isWish ? `《${esc(c.wish?.title || '已删除的心愿')}》` : `《${esc(c.book?.title || '已删除的书')}》`;
+      const cover = isWish
+        ? (c.wish?.photo ? `<img class="cover" src="/files/wishes/${c.wish.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">🙏</div>')
+        : (c.book?.photo ? `<img class="cover" src="/files/books/${c.book.id}.jpg" onerror="this.style.visibility='hidden'">` : '<div class="cover">📖</div>');
+      const off = isWish
+        ? (c.wish && c.wish.status !== 'on' ? ' · 心愿已下架/删除' : '')
+        : (c.book && c.book.status !== 'on' ? ' · 书已下架/售出' : '');
+      const roleCn = isWish ? (c.role === 'buyer' ? '卖家' : '心愿主') : (c.role === 'seller' ? '买家' : '卖家');
+      return `
+      <div class="chat-row" onclick="go('#/chat/${isWish ? 'wish/' : ''}${c.id}')">
+        ${cover}
         <div class="cr-body">
-          <div class="cr-name">《${esc(c.book?.title || '已删除的书')}》${c.unread > 0 ? `<span class="badge" style="position:static;margin-left:6px">${c.unread}</span>` : ''}</div>
+          <div class="cr-name">${isWish ? '<span class="tag" style="background:var(--brand-soft);color:var(--brand)">心愿</span> ' : ''}${title}${c.unread > 0 ? `<span class="badge" style="position:static;margin-left:6px">${c.unread}</span>` : ''}</div>
           <div class="cr-last">${c.last_message ? esc(c.last_message.text || '[图片消息]') : ''}</div>
-          <div class="sub">${c.role === 'seller' ? '买家' : '卖家'}：${esc(c.other?.nickname || '')}${c.book?.status !== 'on' ? ' · 书已下架/售出' : ''}</div>
+          <div class="sub">${roleCn}：${esc(c.other?.nickname || '')}${off}</div>
         </div>
-      </div>`).join('') : '<div class="empty"><div class="big">💬</div>还没有聊天<br>在书市里联系卖家/买家后会出现在这里</div>'
+      </div>`;
+    }).join('') : '<div class="empty"><div class="big">💬</div>还没有聊天<br>在书市联系卖家、或卖家联系心愿后会出现在这里</div>'
   }</div>`;
 }
 
 // ---------- 聊天 ----------
 let chatPoll = null;
+let chatKind = 'book'; // 'book' 书市聊天 / 'wish' 心愿聊天，hash 形如 #/chat/wish/6（不带 kind 默认书市）
+const chatApi = () => (chatKind === 'wish' ? '/wish-chats' : '/book-chats');
 async function vChat(hash) {
-  const id = hash.split('/')[2];
-  const meta = (await GET('/book-chats')).list.find((c) => String(c.id) === String(id));
+  const parts = hash.split('/');
+  chatKind = parts.length >= 4 && parts[2] === 'wish' ? 'wish' : 'book';
+  const id = parts[parts.length - 1];
+  const meta = (await GET(chatApi())).list.find((c) => String(c.id) === String(id));
+  const title = chatKind === 'wish'
+    ? `心愿《${esc(meta?.wish?.title || '已删除的心愿')}》`
+    : `《${esc(meta?.book?.title || '已删除的书')}》`;
+  const subLine = chatKind === 'wish'
+    ? `对方：${esc(meta?.other?.nickname || '')}`
+    : `${meta?.book ? (meta.book.price_cents > 0 ? yuan(meta.book.price_cents) : esc(meta.book.price_note || '')) : ''} · 对方：${esc(meta?.other?.nickname || '')}`;
   $('#view').className = 'flush chatpage';
   $('#view').innerHTML = `
     <div class="chat-meta">
       <button class="back-btn" onclick="history.back()">‹</button>
       <div class="grow" style="min-width:0">
-        <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">《${esc(meta?.book?.title || '已删除的书')}》</div>
-        <div class="sub">${meta?.book ? (meta.book.price_cents > 0 ? yuan(meta.book.price_cents) : esc(meta.book.price_note || '')) : ''} · 对方：${esc(meta?.other?.nickname || '')}</div>
+        <div style="font-weight:800;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+        <div class="sub">${subLine}</div>
       </div>
     </div>
     <div class="chat-wrap">
       <div class="chat-list" id="msgs"><div class="empty">加载中…</div></div>
       <div class="chat-input"><input id="msg-in" placeholder="输入消息…"><button id="msg-send">发送</button></div>
     </div>`;
-  POST(`/book-chats/${id}/read`, {}).catch(() => {});
+  POST(`${chatApi()}/${id}/read`, {}).catch(() => {});
   await loadMsgs(id);
   $('#msg-send').onclick = () => sendMsg(id);
   $('#msg-in').onkeydown = (e) => { if (e.key === 'Enter') sendMsg(id); };
@@ -718,7 +1115,7 @@ async function loadMsgs(id, quiet) {
   const box = $('#msgs');
   if (!box) return;
   try {
-    const d = await GET(`/book-chats/${id}/messages`);
+    const d = await GET(`${chatApi()}/${id}/messages`);
     const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
     box.innerHTML = d.list.map((m) => {
       if (m.type === 'system') return `<div class="msg"><div class="bubble sys">${esc(m.text)}</div></div>`;
@@ -726,7 +1123,7 @@ async function loadMsgs(id, quiet) {
       return `<div class="msg ${mine ? 'me' : ''}"><div class="bubble">${esc(m.text || '[位置消息]')}</div></div>`;
     }).join('');
     if (atBottom || !quiet) box.scrollTop = box.scrollHeight;
-    POST(`/book-chats/${id}/read`, {}).catch(() => {});
+    POST(`${chatApi()}/${id}/read`, {}).catch(() => {});
   } catch (e) { if (!quiet) box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 async function sendMsg(id) {
@@ -735,7 +1132,7 @@ async function sendMsg(id) {
   if (!text) return;
   inp.value = '';
   try {
-    await POST(`/book-chats/${id}/messages`, { text });
+    await POST(`${chatApi()}/${id}/messages`, { text });
     await loadMsgs(id, true);
   } catch (e) { toast(e.message); }
 }
@@ -748,7 +1145,7 @@ async function vNotifications() {
       <div class="notif-card">
         <b>${esc(n.title)}</b> <span class="muted">${fmtTime(n.created_at)}</span>
         <div class="sub" style="margin-top:4px;line-height:1.6">${esc(n.body)}</div>
-        ${n.data_json && JSON.parse(n.data_json).chat_id ? `<button class="btn small" style="margin-top:8px" onclick="go('#/chat/${JSON.parse(n.data_json).chat_id}')">去回复</button>` : ''}
+        ${(() => { const dd = n.data_json && JSON.parse(n.data_json); return dd && dd.chat_id ? `<button class="btn small" style="margin-top:8px" onclick="go('#/chat/${dd.kind === 'wish' ? 'wish/' : ''}${dd.chat_id}')">去回复</button>` : ''; })()}
       </div>`).join('') : '<div class="empty"><div class="big">🔔</div>暂无消息</div>'
   }</div>`;
   POST('/notifications/read', {}).then(loadBell).catch(() => {});

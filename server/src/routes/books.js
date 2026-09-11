@@ -6,7 +6,7 @@ const multer = require('multer');
 const { db, tx, getSettings } = require('../db');
 const { requireUser } = require('../auth');
 const { ok, fail, nowTs, clampInt } = require('../util');
-const { userPublic, gradeWindow } = require('../business');
+const { userPublic, gradeWindow, fuzzyHit } = require('../business');
 const { pushToUser } = require('../ws');
 const { notifyFirstContact } = require('../mailer');
 
@@ -52,18 +52,7 @@ function getOwnBookOrFail(req, res) {
   return b;
 }
 
-// 模糊搜索：包含 或 子序列命中（"线代"命中"线性代数"、"高数"命中"高等数学"，
-// "大物"命中"大学物理"——教材名/课程名的常见缩写都能搜到）
-function fuzzyHit(needle, hay) {
-  hay = String(hay || '').toLowerCase();
-  if (!needle) return true;
-  if (hay.indexOf(needle) >= 0) return true;
-  let i = 0;
-  for (let k = 0; k < hay.length && i < needle.length; k++) {
-    if (hay[k] === needle[i]) i++;
-  }
-  return i >= needle.length;
-}
+// 模糊搜索逻辑已抽到 business.js（书市与心愿单共用）
 
 // ---------- 发布 ----------
 router.post('/', (req, res) => {

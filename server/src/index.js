@@ -124,7 +124,9 @@ app.get('/api/ping', (req, res) => ok(res, { time: Date.now(), tz: 'UTC+8', dev:
 // 路由
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/book-chats', require('./routes/bookchats'));
+app.use('/api/wish-chats', require('./routes/wishchats'));
 app.use('/api/books', require('./routes/books'));
+app.use('/api/wishes', require('./routes/wishes'));
 app.use('/api/invite', require('./routes/invite'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api', require('./routes/misc'));

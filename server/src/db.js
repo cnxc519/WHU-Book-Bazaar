@@ -151,11 +151,50 @@ CREATE TABLE IF NOT EXISTS book_reports(
   note TEXT,
   created_at INTEGER NOT NULL
 );
+-- 心愿单（求购）：与 books 平行的需求侧，无价格，可自提标记
+CREATE TABLE IF NOT EXISTS wishes(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  buyer_id INTEGER NOT NULL,
+  title TEXT NOT NULL,               -- 书名（批量发心愿为 AI 识别的书名数组，一条一个）
+  course TEXT,                       -- 对应课程（选填）
+  note TEXT,                         -- 补充说明（选填：版本/作者/品相要求等）
+  location TEXT,                     -- 交易地点（必填，所有心愿共用一条描述）
+  pickup_ok INTEGER NOT NULL DEFAULT 0, -- 可自提：卖家不用送，买家上门取
+  photo INTEGER NOT NULL DEFAULT 0,  -- 选填参考图（如学校书单截图）
+  status TEXT NOT NULL DEFAULT 'on' CHECK(status IN ('on','off')), -- on 显示中 off 已下架
+  created_at TEXT NOT NULL
+);
+-- 心愿私聊：卖家 <-> 心愿发布者（买家）。与书市聊天分表、收件箱合并展示
+CREATE TABLE IF NOT EXISTS wish_chats(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  wish_id INTEGER NOT NULL,
+  buyer_id INTEGER NOT NULL,         -- 心愿发布者
+  seller_id INTEGER NOT NULL,        -- 联系的卖家
+  unread_buyer INTEGER NOT NULL DEFAULT 0,
+  unread_seller INTEGER NOT NULL DEFAULT 0,
+  last_at INTEGER,
+  closed INTEGER NOT NULL DEFAULT 0, -- 心愿标记已买到删除时置 1
+  UNIQUE(wish_id, seller_id)
+);
+CREATE TABLE IF NOT EXISTS wish_messages(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  chat_id INTEGER NOT NULL,
+  sender_id INTEGER NOT NULL,
+  type TEXT NOT NULL DEFAULT 'text',
+  text TEXT,
+  lat REAL,
+  lon REAL,
+  created_at INTEGER NOT NULL
+);
 CREATE INDEX IF NOT EXISTS idx_notif_user ON notifications(user_id, id DESC);
 CREATE INDEX IF NOT EXISTS idx_books_status ON books(status, id DESC);
 CREATE INDEX IF NOT EXISTS idx_books_seller ON books(seller_id);
 CREATE INDEX IF NOT EXISTS idx_bchats_user ON book_chats(seller_id, last_at DESC);
 CREATE INDEX IF NOT EXISTS idx_bmsgs_chat ON book_messages(chat_id, id);
+CREATE INDEX IF NOT EXISTS idx_wishes_status ON wishes(status, id DESC);
+CREATE INDEX IF NOT EXISTS idx_wchats_seller ON wish_chats(seller_id, last_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wchats_buyer ON wish_chats(buyer_id, last_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wmsgs_chat ON wish_messages(chat_id, id);
 `);
 
 // 老库迁移：books 增加交易地点列 + 批量价格描述列（老库补列，新库建表已含则跳过）

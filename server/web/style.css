@@ -272,8 +272,26 @@ h2.sec { font-size: 16px; font-weight: 800; margin: 6px 4px 12px; }
 #tabbar a svg { width: 22px; height: 22px; display: block; margin: 0 auto 2px; }
 #tabbar a.on { color: #fff; background: linear-gradient(135deg, #14a871, #0d8a5f); box-shadow: 0 4px 12px rgba(15,138,95,.35); }
 #tabbar a.on span { font-weight: 700; }
-#view { padding-bottom: 108px; }
-#view.flush { padding-bottom: 100px; }
+#view { padding-bottom: 150px; }
+#view.flush { padding-bottom: 130px; }
+
+/* ---------- 想买书/想卖书 模式切换条（悬浮在底部导航上方，形态参考乐乐代跑） ---------- */
+#modewrap {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex; gap: 10px;
+  background: rgba(255, 255, 255, .96); backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px;
+  box-shadow: 0 6px 22px rgba(20, 40, 32, .14);
+}
+#modewrap button {
+  font-size: 12px; font-weight: 600; color: var(--sub);
+  background: transparent; border-radius: 999px; padding: 6px 14px;
+  transition: color .15s, background .15s;
+}
+#modewrap button.on { color: #fff; background: linear-gradient(135deg, #14a871, #0d8a5f); box-shadow: 0 3px 10px rgba(15,138,95,.3); }
 
 /* ---------- 图片灯箱（摆放示例等） ---------- */
 .img-overlay {
