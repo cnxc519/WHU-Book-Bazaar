@@ -21,7 +21,7 @@ function toast(msg) {
 }
 
 async function api(method, path, body, isForm) {
-  const opt = { method, headers: {} };
+  const opt = { method, headers: {}, cache: 'no-store' };
   if (getToken()) opt.headers.Authorization = 'Bearer ' + getToken();
   if (body && isForm) opt.body = body;
   else if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
@@ -317,7 +317,7 @@ async function vBook(hash) {
       <div class="avatar">${esc((b.seller?.nickname || '友')[0])}</div>
       <div class="grow">
         <div style="font-weight:700">${esc(b.seller?.nickname || '')}</div>
-        <div class="sub">在售 ${b.seller_books_on ?? 0} 本 · 注册 ${fmtTime(b.seller?.created_at)}</div>
+        <div class="sub">在售 ${b.seller?.books_on ?? 0} 本 · 注册 ${fmtTime(b.seller?.created_at)}</div>
       </div>
       <button class="btn small ghost" onclick="go('#/user/${b.seller?.id}')">看主页</button>
     </div>

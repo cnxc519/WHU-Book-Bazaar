@@ -265,11 +265,14 @@ router.get('/:id', (req, res) => {
     return fail(res, '只能查看本校同学发布的书籍', 403, 'FORBIDDEN');
   }
   const school = db.prepare(`SELECT name FROM schools WHERE id=?`).get(seller.school_id);
+  // 卖家在售数（含当前这本）：详情页卖家卡展示
+  const sellerBooksOn = db.prepare(`SELECT COUNT(*) c FROM books WHERE seller_id=? AND status='on'`).get(seller.id).c;
   ok(res, {
     ...bookCard(b),
     seller: {
       id: seller.id, nickname: seller.nickname, gender: seller.gender, avatar: seller.avatar,
       school: school ? school.name : '', created_at: seller.created_at,
+      books_on: sellerBooksOn,
     },
     is_seller: isSeller,
     my_thread: myThread ? { chat_id: myThread.id, unread: myThread.unread_buyer } : null,
