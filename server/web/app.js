@@ -185,7 +185,8 @@ function vLogin() {
     <div class="field"><label>昵称（1-20 字）</label><input id="lg-nick" placeholder="给自己起个昵称"></div>
     <div class="field"><label>学校</label><select id="lg-school"><option value="">加载中…</option></select></div>
     <div class="field"><label>性别</label><div class="chips" id="lg-gender">
-      <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div></div>
+      <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div>
+      <div class="muted" style="font-size:11px;margin-top:-2px">部分同学更倾向购买同性同学的二手书，性别仅作展示参考，建议如实填写哦</div></div>
     ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
     <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
     <div class="agree-row"><input type="checkbox" id="lg-agree" checked><label for="lg-agree">我已阅读并同意以上协议</label></div></div>
@@ -316,7 +317,8 @@ function bindCode(emailSel, btnSel, purpose) {
       const d = await POST('/auth/send-code', { email, purpose });
       toast(d.msg || '验证码已发送，请查收邮件');
       let sec = 60;
-      const h = setInterval(() => { btn.textContent = (--sec) + 's'; if (sec <= 0) { clearInterval(h); btn.disabled = false; btn.textContent = '获取验证码'; } }, 1000);
+      btn.textContent = '已发送 60s';
+      const h = setInterval(() => { sec--; btn.textContent = '已发送 ' + sec + 's'; if (sec <= 0) { clearInterval(h); btn.disabled = false; btn.textContent = '获取验证码'; } }, 1000);
     } catch (e) { btn.disabled = false; btn.textContent = '获取验证码'; toast(e.message); }
   };
 }
