@@ -1,5 +1,5 @@
 {
-  "_说明": "乐乐代跑服务端配置。复制为 server/config.json 后修改。修改后重启服务生效。金额单位均为分（元 x 100）。",
+  "_说明": "WHU二手书市服务端配置。复制为 server/config.json 后修改。修改后重启服务生效。金额单位均为分（元 x 100）。",
   "port": 8901,
   "host": "0.0.0.0",
   "dev_mode": false,
@@ -12,7 +12,7 @@
     "pass": "SMTP授权码",
     "_说明": "QQ 邮箱需要在设置-账户里开启 SMTP 服务获得授权码"
   },
-  "mail_from": "乐乐代跑 <你的QQ邮箱@qq.com>",
+  "mail_from": "WHU二手书市 <你的QQ邮箱@qq.com>",
   "admin": {
     "username": "admin",
     "password": "请修改管理密码",

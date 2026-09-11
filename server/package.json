@@ -1,8 +1,8 @@
 {
-  "name": "lele-daipao-server",
+  "name": "whu-book-bazaar-server",
   "version": "1.0.0",
   "private": true,
-  "description": "乐乐代跑 - 校园代跑平台服务端",
+  "description": "WHU二手书市 - 校园二手书市平台服务端",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
