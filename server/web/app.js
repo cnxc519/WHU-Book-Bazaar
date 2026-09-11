@@ -370,7 +370,7 @@ function bookCardHtml(b) {
       <div class="bc-title">${esc(b.title)}</div>
       ${b.price_note && b.price_cents === 0 ? '' : ''}
       ${b.note ? `<div class="bc-note">${esc(b.note)}</div>` : ''}
-      <div style="margin-top:3px">${b.cond_cn ? `<span class="tag">${esc(b.cond_cn)}</span>` : ''}${b.course ? `<span class="tag gray">📘 ${esc(b.course)}</span>` : ''}</div>
+      <div style="margin-top:3px">${b.is_mine ? '<span class="tag" style="background:var(--brand-soft);color:var(--brand)">📌 我的</span>' : ''}${b.cond_cn ? `<span class="tag">${esc(b.cond_cn)}</span>` : ''}${b.course ? `<span class="tag gray">📘 ${esc(b.course)}</span>` : ''}</div>
       <div class="bc-meta">👤 ${esc(b.seller?.nickname || '')} · ${esc(b.school || '')} · ${fmtTime(b.created_at)}</div>
     </div>
     ${price}

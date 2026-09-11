@@ -231,9 +231,10 @@ router.get('/', (req, res) => {
   const fQ = String(req.query.q || '').trim().toLowerCase().replace(/\s+/g, '');
   const sort = ['latest', 'price_asc', 'price_desc'].includes(req.query.sort) ? req.query.sort : 'latest';
 
-  // 数据按学校隔离：只能看到本校同学的在售书
-  const rows = db.prepare(`SELECT b.* FROM books b JOIN users u ON u.id=b.seller_id
-      WHERE b.status='on' AND b.seller_id!=? AND u.school_id=?
+  // 数据按学校隔离：只能看到本校同学的在售书；包含自己发布的（is_mine 标记，
+  // 网页端打"我的"角标，详情页走卖家视图：管理入口，无联系/举报）
+  const rows = db.prepare(`SELECT b.*, (b.seller_id = ?) AS is_mine FROM books b JOIN users u ON u.id=b.seller_id
+      WHERE b.status='on' AND u.school_id=?
         AND NOT EXISTS(SELECT 1 FROM users u2 WHERE u2.id=b.seller_id AND u2.banned=1)
       ORDER BY b.id DESC`)
     .all(me.id, me.school_id);
@@ -245,7 +246,7 @@ router.get('/', (req, res) => {
 
   const total = list.length;
   const slice = list.slice((page - 1) * size, page * size);
-  ok(res, { list: slice.map(bookCard), total, has_more: page * size < total });
+  ok(res, { list: slice.map((b) => ({ ...bookCard(b), is_mine: !!b.is_mine })), total, has_more: page * size < total });
 });
 
 // ---------- 我的书（全部状态，管理用） ----------
