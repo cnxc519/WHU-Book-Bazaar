@@ -380,7 +380,7 @@ function bindCode(emailSel, btnSel, purpose) {
 }
 
 // ---------- 书市 ----------
-let browseQ = '', browseSort = 'latest';
+let browseQ = '', browseSort = 'latest', browsePage = 1;
 function vBrowse() {
   $('#view').innerHTML = `
     <div class="card search-card">
@@ -401,14 +401,31 @@ function vBrowse() {
   document.querySelectorAll('.chips .chip').forEach((c) => c.onclick = () => { browseSort = c.dataset.s; vBrowse(); });
   loadBrowse();
 }
-async function loadBrowse() {
-  $('#blist').innerHTML = '<div class="empty">加载中…</div>';
+async function loadBrowse(append) {
+  const box = $('#blist');
+  if (!append) { browsePage = 1; box.innerHTML = '<div class="empty">加载中…</div>'; }
   try {
-    const d = await GET(`/books?q=${encodeURIComponent(browseQ)}&sort=${browseSort}`);
-    if (!d.list.length) { $('#blist').innerHTML = '<div class="empty"><div class="big">📚</div>暂时没有在售的书<br>去「卖书」发布第一本吧</div>'; return; }
-    $('#blist').innerHTML = d.list.map(bookCardHtml).join('');
+    const d = await GET(`/books?q=${encodeURIComponent(browseQ)}&sort=${browseSort}&page=${browsePage}`);
+    $('#more-browse')?.remove();
+    if (!d.list.length && !append) {
+      box.innerHTML = '<div class="empty"><div class="big">📚</div>暂时没有在售的书<br>去「卖书」发布第一本吧</div>';
+      return;
+    }
+    if (!append) box.innerHTML = '';
+    const frag = document.createElement('div');
+    frag.innerHTML = d.list.map(bookCardHtml).join('');
+    while (frag.firstChild) box.appendChild(frag.firstChild);
+    if (d.has_more) {
+      const more = document.createElement('button');
+      more.id = 'more-browse';
+      more.className = 'btn ghost';
+      more.style.cssText = 'margin:14px auto;display:block';
+      more.textContent = '加载更多';
+      more.onclick = () => { browsePage++; loadBrowse(true); };
+      box.appendChild(more);
+    }
     document.querySelectorAll('#blist .book-card').forEach((el) => el.onclick = () => go('#/book/' + el.dataset.id));
-  } catch (e) { $('#blist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  } catch (e) { if (!append) box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 function bookCardHtml(b) {
   const price = b.price_cents > 0 ? `<div class="bc-price">${yuan(b.price_cents)}</div>`
@@ -725,7 +742,7 @@ function changeCover(id, ev) {
 
 // ---------- 心愿单（求购）：浏览 / 发布 / 详情 ----------
 // 需求侧：无价格，多一个"可自提"标记；图片选填（可放学校书单截图，AI 会识别并排除已划掉的书）
-let wishQ = '', wishSort = 'latest';
+let wishQ = '', wishSort = 'latest', wishPage = 1;
 function vWishlist() {
   $('#view').innerHTML = `
     <div class="card search-card">
@@ -745,17 +762,31 @@ function vWishlist() {
   document.querySelectorAll('.chips .chip').forEach((c) => c.onclick = () => { wishSort = c.dataset.s; vWishlist(); });
   loadWishlist();
 }
-async function loadWishlist() {
-  $('#wlist').innerHTML = '<div class="empty">加载中…</div>';
+async function loadWishlist(append) {
+  const box = $('#wlist');
+  if (!append) { wishPage = 1; box.innerHTML = '<div class="empty">加载中…</div>'; }
   try {
-    const d = await GET(`/wishes?q=${encodeURIComponent(wishQ)}&sort=${wishSort}`);
-    if (!d.list.length) {
-      $('#wlist').innerHTML = '<div class="empty"><div class="big">🙏</div>还没有人发心愿<br>切到「想买书」发布第一条求购吧</div>';
+    const d = await GET(`/wishes?q=${encodeURIComponent(wishQ)}&sort=${wishSort}&page=${wishPage}`);
+    $('#more-wish')?.remove();
+    if (!d.list.length && !append) {
+      box.innerHTML = '<div class="empty"><div class="big">🙏</div>还没有人发心愿<br>切到「想买书」发布第一条求购吧</div>';
       return;
     }
-    $('#wlist').innerHTML = d.list.map(wishCardHtml).join('');
+    if (!append) box.innerHTML = '';
+    const frag = document.createElement('div');
+    frag.innerHTML = d.list.map(wishCardHtml).join('');
+    while (frag.firstChild) box.appendChild(frag.firstChild);
+    if (d.has_more) {
+      const more = document.createElement('button');
+      more.id = 'more-wish';
+      more.className = 'btn ghost';
+      more.style.cssText = 'margin:14px auto;display:block';
+      more.textContent = '加载更多';
+      more.onclick = () => { wishPage++; loadWishlist(true); };
+      box.appendChild(more);
+    }
     document.querySelectorAll('#wlist .book-card').forEach((el) => el.onclick = () => go('#/wish/' + el.dataset.id));
-  } catch (e) { $('#wlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
+  } catch (e) { if (!append) box.innerHTML = `<div class="empty">${esc(e.message)}</div>`; }
 }
 function wishCardHtml(w) {
   const cover = w.photo ? `<img class="cover" src="/files/wishes/${w.id}.jpg" onerror="this.style.visibility='hidden'">` : `<div class="cover">🙏</div>`;
