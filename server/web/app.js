@@ -176,18 +176,16 @@ function renderTabbar() {
   ).join('');
 }
 
-// 摆放示例灯箱：展示标准摆拍/书单示例照片，点击任意处关闭。
-// 书单表格文字小，心愿示例用原尺寸 + 可滚动查看（缩放会看不清）
+// 摆放示例灯箱：展示标准摆拍/书单示例照片，点击任意处关闭
 function showExample(ev, img) {
   ev?.stopPropagation();
   const src = img || '/example-books.jpg';
-  const isWish = src.includes('wish');
-  const tip = isWish
-    ? '书单原图按原始大小展示，可拖动查看 ↑ 已划掉的书 AI 会自动排除，只认需要买的书'
+  const tip = src.includes('wish')
+    ? '像这样把书单拍清楚 ↑ 已划掉的书 AI 会自动排除，只认需要买的书'
     : '像这样把书竖直排开、书名朝外拍一张 ↑ 点击任意处关闭';
   const ov = document.createElement('div');
   ov.className = 'img-overlay';
-  ov.innerHTML = `<div class="img-box${isWish ? ' scrollable' : ''}"><img src="${src}" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">${tip}</div></div>`;
+  ov.innerHTML = `<div class="img-box"><img src="${src}" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">${tip}</div></div>`;
   ov.onclick = () => ov.remove();
   document.body.appendChild(ov);
 }
