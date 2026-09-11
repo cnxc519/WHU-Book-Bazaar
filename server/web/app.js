@@ -734,13 +734,23 @@ async function vNotifications() {
 // ---------- 邀请 ----------
 async function vInvite() {
   const d = await GET('/invite');
+  // 绑定邀请人卡片：未绑定时显示输入行（每人限一次），已绑定显示好友名
+  const bindBlock = d.inviter_name
+    ? `<div class="agree-row" style="margin-top:10px"><span style="font-size:15px">🤝</span><div class="sub">已与 <b style="color:var(--ink)">${esc(d.inviter_name)}</b> 成为好友（每人限填一次邀请码）</div></div>`
+    : `<div class="row" style="margin-top:10px">
+        <input id="bind-code" class="grow" placeholder="输入好友的邀请码" style="border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;font-size:13px" oninput="this.value=this.value.toUpperCase()">
+        <button class="btn small" id="bind-go">绑定</button>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:6px">如果好友先注册了也没关系：在这里填 TA 的邀请码即可成为好友（每人限一次，绑定后不可更改）</div>`;
   $('#view').innerHTML = `
     <div class="card center" style="background:linear-gradient(135deg,#0f8a5f,#16a06f);color:#fff">
       <div style="font-size:15px;opacity:.9">你的邀请码</div>
       <div style="font-size:34px;font-weight:800;letter-spacing:6px;margin:8px 0" id="inv-code">${esc(d.invite_code)}</div>
       <button class="btn small" style="margin:0 auto" onclick="navigator.clipboard.writeText($('#inv-code').textContent).then(()=>toast('邀请码已复制'))">复制邀请码</button>
     </div>
-    <div class="card"><div class="sub">把邀请码分享给同学，注册时填写即可成为好友。已邀请 <b>${d.invited_count}</b> 位同学。</div></div>
+    <div class="card"><div class="sub">把邀请码或邀请链接分享给同学即可成为好友。已邀请 <b>${d.invited_count}</b> 位同学。</div>
+      ${bindBlock}
+    </div>
     <div class="card" style="background:linear-gradient(135deg,#e6f5ee,#f2fbf7)">
       <div class="row">
         <div style="font-size:24px">🔗</div>
@@ -753,6 +763,17 @@ async function vInvite() {
     </div>
     <h2 class="sec">我邀请的好友（${d.friends.length}）</h2>
     ${d.friends.length ? d.friends.map((f) => `<div class="card seller-card"><div class="avatar">${esc(f.nickname[0])}</div><div><b>${esc(f.nickname)}</b><div class="sub">${fmtTime(f.created_at)} 加入</div></div></div>`).join('') : '<div class="empty">还没有邀请好友</div>'}`;
+  const goBind = $('#bind-go');
+  if (goBind) goBind.onclick = async () => {
+    const code = $('#bind-code').value.trim();
+    if (!code) return toast('请填写邀请码');
+    goBind.disabled = true;
+    try {
+      const r = await POST('/invite/bind', { code });
+      toast(`成功！你和 ${r.inviter_name} 现在是好友啦`);
+      vInvite();
+    } catch (e) { goBind.disabled = false; toast(e.message); }
+  };
 }
 
 // ---------- 我的 ----------
