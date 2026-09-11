@@ -280,7 +280,8 @@ h2.sec { font-size: 16px; font-weight: 800; margin: 6px 4px 12px; }
   position: fixed; left: 50%; transform: translateX(-50%);
   bottom: calc(92px + env(safe-area-inset-bottom));
   z-index: 50;
-  display: flex; gap: 10px;
+  display: flex; gap: 8px;
+  max-width: calc(100vw - 24px);
   background: rgba(255, 255, 255, .96); backdrop-filter: blur(14px);
   border: 1px solid var(--line);
   border-radius: 999px; padding: 5px;
@@ -288,7 +289,8 @@ h2.sec { font-size: 16px; font-weight: 800; margin: 6px 4px 12px; }
 }
 #modewrap button {
   font-size: 12px; font-weight: 600; color: var(--sub);
-  background: transparent; border-radius: 999px; padding: 6px 14px;
+  white-space: nowrap; flex-shrink: 0;
+  background: transparent; border-radius: 999px; padding: 6px 12px;
   transition: color .15s, background .15s;
 }
 #modewrap button.on { color: #fff; background: linear-gradient(135deg, #14a871, #0d8a5f); box-shadow: 0 3px 10px rgba(15,138,95,.3); }
