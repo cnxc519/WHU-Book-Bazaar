@@ -4,6 +4,7 @@ const http = require('http');
 const express = require('express');
 const { cfg } = require('./config');
 const { initWs } = require('./ws');
+const { initSweeps } = require('./sweeps');
 const { ok } = require('./util');
 
 require('./db'); // 初始化数据库
@@ -144,6 +145,7 @@ server.requestTimeout = 0;
 server.headersTimeout = 60 * 1000;
 server.keepAliveTimeout = 75 * 1000;
 initWs(server);
+initSweeps();
 
 server.listen(cfg.port, cfg.host, () => {
   console.log('==========================================');

@@ -47,10 +47,12 @@ echo "================ 乐乐书市部署（$MODE） ================"
 echo "目标 : $SSH_TARGET  目录: $REMOTE_DIR"
 
 # ---------- 打包并上传（免密） ----------
+# 配置分离：本地 config.json 是开发配置（dev_mode 开/无 SMTP），不上传；
+# config.prod.json 才是生产配置，远端解压后覆盖 config.json
 TMP_TGZ="$(mktemp -u).tgz"
 tar czf "$TMP_TGZ" --exclude=node_modules --exclude='data.db' --exclude='data.db-wal' \
   --exclude='data.db-shm' --exclude=uploads --exclude='*.log' \
-  src admin web config.json package.json package-lock.json
+  src admin web config.prod.json package.json package-lock.json
 scp -q "$TMP_TGZ" "$SSH_TARGET:/tmp/lele-deploy.tgz"
 rm -f "$TMP_TGZ"
 
@@ -64,7 +66,8 @@ APP="$APP_NAME"
 
 tar xzf /tmp/lele-deploy.tgz -C "\$DIR"
 rm -f /tmp/lele-deploy.tgz
-echo "   代码已更新"
+if [ -f "\$DIR/config.prod.json" ]; then cp "\$DIR/config.prod.json" "\$DIR/config.json"; fi
+echo "   代码已更新（config.json 以 config.prod.json 为准）"
 
 if [ "\$MODE" = "init" ]; then
   export DEBIAN_FRONTEND=noninteractive

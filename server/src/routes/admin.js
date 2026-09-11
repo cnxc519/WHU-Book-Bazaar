@@ -101,7 +101,7 @@ router.get('/users', (req, res) => {
   const where = q ? `WHERE (u.email LIKE ? OR u.nickname LIKE ?)` : `WHERE 1=1`;
   const params = q ? [like, like, (page - 1) * 30] : [(page - 1) * 30];
   const list = db.prepare(`
-      SELECT u.id,u.email,u.nickname,u.gender,u.banned,u.avatar,u.created_at,
+      SELECT u.id,u.email,u.nickname,u.gender,u.grade,u.banned,u.avatar,u.created_at,
         s.name school, u.invited_by
       FROM users u LEFT JOIN schools s ON s.id=u.school_id ${where} ORDER BY u.id DESC LIMIT 30 OFFSET ?`).all(...params);
   ok(res, { list });

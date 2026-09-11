@@ -49,6 +49,7 @@ testenv/*.log
 
 # 含密配置（SMTP 授权码/管理密码/jwt_secret），仅存本地，部署脚本会带上
 server/config.json
+server/config.prod.json
 testenv/server/config.json
 # 本地构建的安装包与上传目录
 testenv/*.apk

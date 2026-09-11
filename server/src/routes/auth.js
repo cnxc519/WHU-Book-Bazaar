@@ -8,6 +8,7 @@ const { db, getSettings } = require('../db');
 const { sendCode, verifyCode } = require('../mailer');
 const { signUserToken, requireUser } = require('../auth');
 const { cfg } = require('../config');
+const { gradeWindow } = require('../business');
 const { ok, fail, isEmail, inviteCode, makeLimiter, cleanupLimiter, nowTs } = require('../util');
 const { pushToUser } = require('../ws');
 
@@ -40,15 +41,21 @@ router.post('/register', (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const code = String(req.body.code || '').trim();
   const nickname = String(req.body.nickname || '').trim();
-  const schoolId = parseInt(req.body.school_id, 10);
   const gender = req.body.gender === 'male' ? 'male' : req.body.gender === 'female' ? 'female' : null;
   const inv = String(req.body.invite_code || '').trim().toUpperCase();
 
   if (!isEmail(email)) return fail(res, '邮箱格式不正确');
   if (!gender) return fail(res, '请选择性别');
+  const grade = parseInt(req.body.grade, 10);
+  const gw = gradeWindow();
+  if (!Number.isFinite(grade) || grade < gw.min || grade > gw.max) return fail(res, '请选择年级');
   if (nickname.length < 1 || nickname.length > 20 || /[\x00-\x1f]/.test(nickname)) return fail(res, '昵称需为 1-20 个字符');
-  const school = db.prepare(`SELECT id FROM schools WHERE id=?`).get(schoolId);
-  if (!school) return fail(res, '请选择学校');
+  // 学校不传/无效时默认取唯一学校（当前只有武大，网页注册已不展示学校选择）
+  let schoolId = parseInt(req.body.school_id, 10);
+  if (!Number.isFinite(schoolId) || !db.prepare(`SELECT id FROM schools WHERE id=?`).get(schoolId)) {
+    schoolId = (db.prepare(`SELECT id FROM schools ORDER BY id LIMIT 1`).get() || {}).id || 0;
+  }
+  if (!schoolId) return fail(res, '暂无可用学校，请联系管理员');
   if (db.prepare(`SELECT id FROM users WHERE email=?`).get(email)) return fail(res, '该邮箱已注册，请直接登录');
 
   const v = verifyCode(email, 'register', code);
@@ -65,8 +72,8 @@ router.post('/register', (req, res) => {
   let codeStr;
   do { codeStr = inviteCode(); } while (db.prepare(`SELECT id FROM users WHERE invite_code=?`).get(codeStr));
 
-  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?)`)
-    .run(email, nickname, schoolId, gender, codeStr, invitedBy, new Date().toISOString());
+  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,grade,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?,?)`)
+    .run(email, nickname, schoolId, grade, gender, codeStr, invitedBy, new Date().toISOString());
   const uid = r.lastInsertRowid;
 
   if (invitedBy) {
@@ -134,13 +141,19 @@ router.post('/complete-register', (req, res) => {
   const existed = db.prepare(`SELECT id FROM users WHERE email=?`).get(email);
   if (existed) return ok(res, { already: true, token: signUserToken(existed.id) });
   const nickname = String(req.body.nickname || '').trim();
-  const schoolId = parseInt(req.body.school_id, 10);
   const gender = req.body.gender === 'male' ? 'male' : req.body.gender === 'female' ? 'female' : null;
   const inv = String(req.body.invite || '').trim().toUpperCase();
   if (nickname.length < 1 || nickname.length > 20) return fail(res, '昵称需为 1-20 个字符');
-  const school = db.prepare(`SELECT id FROM schools WHERE id=?`).get(schoolId);
-  if (!school) return fail(res, '请选择学校');
+  // 学校不传/无效时默认取唯一学校（当前只有武大，网页注册已不展示学校选择）
+  let schoolId = parseInt(req.body.school_id, 10);
+  if (!Number.isFinite(schoolId) || !db.prepare(`SELECT id FROM schools WHERE id=?`).get(schoolId)) {
+    schoolId = (db.prepare(`SELECT id FROM schools ORDER BY id LIMIT 1`).get() || {}).id || 0;
+  }
+  if (!schoolId) return fail(res, '暂无可用学校，请联系管理员');
   if (!gender) return fail(res, '请选择性别');
+  const grade = parseInt(req.body.grade, 10);
+  const gw = gradeWindow();
+  if (!Number.isFinite(grade) || grade < gw.min || grade > gw.max) return fail(res, '请选择年级');
   let invitedBy = null;
   if (inv) {
     const inviter = db.prepare(`SELECT id,nickname FROM users WHERE invite_code=? AND id!=0`).get(inv);
@@ -149,8 +162,8 @@ router.post('/complete-register', (req, res) => {
   }
   let codeStr;
   do { codeStr = inviteCode(); } while (db.prepare(`SELECT id FROM users WHERE invite_code=?`).get(codeStr));
-  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?)`)
-    .run(email, nickname, schoolId, gender, codeStr, invitedBy, new Date().toISOString());
+  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,grade,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?,?)`)
+    .run(email, nickname, schoolId, grade, gender, codeStr, invitedBy, new Date().toISOString());
   const uid = r.lastInsertRowid;
   if (invitedBy) {
     db.prepare(`INSERT INTO notifications(user_id,type,title,body,created_at) VALUES(?,?,?,?,?)`)
@@ -167,6 +180,7 @@ router.get('/me', requireUser, (req, res) => {
   ok(res, {
     id: u.id, email: u.email, nickname: u.nickname, gender: u.gender, avatar: u.avatar,
     school_id: u.school_id, school: school ? school.name : '',
+    grade: u.grade, grade_cn: u.grade ? (u.grade % 100) + '级' : '',
     invited_by: u.invited_by,
     books_on: db.prepare(`SELECT COUNT(*) c FROM books WHERE seller_id=? AND status='on'`).get(u.id).c,
   });

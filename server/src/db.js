@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS users(
   email TEXT UNIQUE NOT NULL,
   nickname TEXT NOT NULL,
   school_id INTEGER NOT NULL DEFAULT 0,
+  grade INTEGER NOT NULL DEFAULT 0,  -- 年级（入学年份，如 2025 = 25级；0 为迁移前的旧行，启动时统一补齐）
   gender TEXT NOT NULL DEFAULT 'female' CHECK(gender IN ('male','female')),
   invite_code TEXT UNIQUE NOT NULL,
   invited_by INTEGER,
@@ -170,6 +171,18 @@ CREATE INDEX IF NOT EXISTS idx_bmsgs_chat ON book_messages(chat_id, id);
     db.exec(`ALTER TABLE books ADD COLUMN price_note TEXT`);
     console.log('[migrate] books 表已增加 price_note 列');
   }
+}
+
+// 老库迁移：users 增加年级列（入学年份，如 2025 表示 25 级）。
+// 存量用户统一补为 25 级——grade=0 只存在于迁移前的旧行（注册接口必填年级，正常不会产生 0）
+{
+  const userCols = db.prepare(`PRAGMA table_info(users)`).all().map((c) => c.name);
+  if (!userCols.includes('grade')) {
+    db.exec(`ALTER TABLE users ADD COLUMN grade INTEGER NOT NULL DEFAULT 0`);
+    console.log('[migrate] users 表已增加 grade 列');
+  }
+  const gm = db.prepare(`UPDATE users SET grade=2025 WHERE grade=0`).run();
+  if (gm.changes) console.log('[migrate] 存量用户年级已统一设为 25 级（2025）:', gm.changes, '人');
 }
 
 // 学校与默认可调设置

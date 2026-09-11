@@ -129,6 +129,7 @@ const routes = {
   '#/inbox': vInbox, '#/chat': vChat,
   '#/notifications': vNotifications,
   '#/invite': vInvite, '#/me': vMe, '#/user': vUser,
+  '#/feedback': vFeedback,
 };
 function go(hash) { location.hash = hash; }
 // 关键：目标 hash 与当前相同时 location.hash 赋值不会触发 hashchange，
@@ -183,10 +184,11 @@ function vLogin() {
     <button class="btn" id="lg-btn">登录 / 注册</button>`;
   const step2 = `
     <div class="field"><label>昵称（1-20 字）</label><input id="lg-nick" placeholder="给自己起个昵称"></div>
-    <div class="field"><label>学校</label><select id="lg-school"><option value="">加载中…</option></select></div>
+    <div class="field"><label>年级</label><select id="lg-grade"><option value="">请选择年级</option></select>
+      <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 3px">每年 8 月 10 日，毕业年级的在售书籍会统一下架，避免无人处理的旧书影响大家浏览体验</div></div>
     <div class="field"><label>性别</label><div class="chips" id="lg-gender">
       <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div>
-      <div class="muted" style="font-size:11px;margin-top:-2px">部分同学更倾向购买同性同学的二手书，性别仅作展示参考，建议如实填写哦</div></div>
+      <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 1px">部分同学更倾向购买同性同学的二手书，性别仅作展示参考，建议如实填写哦</div></div>
     ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
     <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
     <div class="agree-row"><input type="checkbox" id="lg-agree" checked><label for="lg-agree">我已阅读并同意以上协议</label></div></div>
@@ -204,7 +206,7 @@ function vLogin() {
     </div>`;
 
   // 第二步没有验证码行和登录按钮，绑定必须按步骤区分（否则 null.onclick 报错中断，
-  // 后面的 loadSchools 也不会执行——学校就会一直卡在"加载中"）
+  // 后面的年级下拉填充也不会执行——年级就会一直只有"请选择年级"一项）
   if (loginStep === 1) bindCode('#lg-email', '#lg-send', 'login');
   let gender = '';
   document.querySelectorAll('#lg-gender .chip').forEach((c) => c.onclick = () => {
@@ -212,15 +214,19 @@ function vLogin() {
     document.querySelectorAll('#lg-gender .chip').forEach((x) => x.classList.toggle('on', x === c));
   });
 
-  // 学校下拉（进入第二步时加载）
-  function loadSchools() {
-    GET('/schools').then((d) => {
-      const sel = $('#lg-school');
-      if (!sel) return;
-      sel.innerHTML = d.list.map((s2) => `<option value="${s2.id}">${esc(s2.name)}</option>`).join('');
-    }).catch(() => {});
+  // 年级下拉（注册第二步）：与服务端 gradeWindow 同一规则（8 月 10 日为新学年起点）
+  // 学校无需选择：都是 WHU，服务端注册时默认取唯一学校
+  if (loginStep === 2) {
+    const now = new Date(), y = now.getFullYear(), md = (now.getMonth() + 1) * 100 + now.getDate();
+    const newTerm = md >= 810;
+    const g0 = newTerm ? y - 3 : y - 4, g1 = newTerm ? y : y - 1;
+    const gsel = $('#lg-grade');
+    if (gsel) gsel.innerHTML = '<option value="">请选择年级</option>' +
+      Array.from({ length: g1 - g0 + 1 }, (_, i) => {
+        const g = g1 - i; // 新年级在前
+        return `<option value="${g}">${g % 100}级（${g} 年入学）</option>`;
+      }).join('');
   }
-  if (loginStep === 2) loadSchools();
 
   // 第一步：验证码校验 → 已注册登录 / 未注册进入第二步
   const lgBtn = $('#lg-btn');
@@ -249,15 +255,15 @@ function vLogin() {
   const finish = $('#lg-finish');
   if (finish) finish.onclick = async () => {
     const nickname = ($('#lg-nick') || {}).value?.trim() || '';
-    const schoolId = +(($('#lg-school') || {}).value || 0);
+    const grade = +(($('#lg-grade') || {}).value || 0);
     if (!nickname) return toast('请填写昵称');
-    if (!schoolId) return toast('学校加载中，稍等一下');
+    if (!grade) return toast('请选择年级');
     if (!gender) return toast('请选择性别');
     if (!$('#lg-agree').checked) return toast('请勾选同意注册协议');
     finish.disabled = true;
     try {
       const d = await POST('/auth/complete-register', {
-        pending: loginPending, nickname, school_id: schoolId, gender, invite: loginInvite,
+        pending: loginPending, nickname, grade, gender, invite: loginInvite,
       });
       setToken(d.token); window._myId = d.user.id;
       toast('注册成功，欢迎加入！'); navTo('#/browse');
@@ -466,7 +472,13 @@ function batchFormHtml() {
       </div>
     </div>
     <input type="file" id="sell-file" accept="image/*" class="hidden">
-    <div class="field" style="margin-top:12px"><label>书名（识别后请核对，可增删改）<button class="chip small" style="float:right" id="add-one">+ 添加一本</button></label><div id="titles"></div></div>
+    <div class="field" style="margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <label style="margin-bottom:0">书名（识别后请核对，可增删改）</label>
+        <button class="chip small" id="add-one" type="button">+ 添加一本</button>
+      </div>
+      <div id="titles" style="margin-top:9px"></div>
+    </div>
     <div class="field"><label>交易地点（必填，所有书共用）</label><input id="bt-loc" placeholder="当面交书的地点"></div>
     <div class="field"><label>价格描述（必填，1-60 字，所有书共用）</label><input id="bt-price" placeholder="例如：左边10r/本，右边20r/本"></div>
     <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
@@ -481,7 +493,16 @@ function renderTitles() {
 }
 function bindBatch() {
   renderTitles();
-  document.querySelectorAll('.bt-title').forEach((inp) => inp.oninput = () => { batchTitles[+inp.dataset.i] = inp.value; const n = batchTitles.filter((t) => t.trim()).length; $('#bt-go').textContent = `${n} 本全部发布`; });
+  // 输入事件挂 #titles 容器上（事件委托）：renderTitles 每次重建行 DOM，
+  // 若逐行绑 oninput，「+ 添加一本」/AI 识别出来的新行打字不会同步进数据，
+  // 表现为一直显示 0 本、点发布被"请至少填写一个书名"挡住
+  $('#titles').addEventListener('input', (e) => {
+    const inp = e.target.closest('.bt-title');
+    if (!inp) return;
+    batchTitles[+inp.dataset.i] = inp.value;
+    const n = batchTitles.filter((t) => t.trim()).length;
+    $('#bt-go').textContent = `${n} 本全部发布`;
+  });
   $('#add-one').onclick = () => { batchTitles.push(''); renderTitles(); const inputs = document.querySelectorAll('.bt-title'); inputs[inputs.length - 1]?.focus(); };
   $('#sell-file').onchange = async (e) => {
     const f = e.target.files[0];
@@ -795,10 +816,10 @@ async function vMe() {
       <div class="grow"><b>邀请好友</b><div class="sub">把邀请码分享给同学</div></div>
       <button class="btn small ghost" onclick="go('#/invite')">查看</button>
     </div>
-    <div class="card">
-      <div class="row" style="margin-bottom:8px"><div style="font-size:22px">💬</div><div class="grow"><b style="font-size:14px">意见反馈</b><div class="sub">问题和建议都会直达开发者</div></div></div>
-      <textarea id="fb-text" rows="3" placeholder="说说你的问题和建议（5-500 字）" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:13px;line-height:1.5"></textarea>
-      <button class="btn small" style="margin-top:8px" id="fb-go" onclick="submitFeedback()">提交反馈</button>
+    <div class="card seller-card" onclick="go('#/feedback')" style="cursor:pointer">
+      <div class="avatar" style="background:#e6f5ee;color:#0f8a5f">💬</div>
+      <div class="grow"><b>意见反馈</b><div class="sub">问题和建议都会直达开发者</div></div>
+      <button class="btn small ghost">去反馈</button>
     </div>
     <div class="card">
       <div class="sub" style="line-height:1.8">WHU二手书市 · 网页版 v1.0<br>平台仅提供信息展示，不参与交易。<br>线下交易请当面验书、当面付款。</div>
@@ -806,17 +827,37 @@ async function vMe() {
     <button class="btn danger" onclick="logout()">退出登录</button>
     <input type="file" id="av-file" accept="image/*" class="hidden">`;
 }
+// ---------- 意见反馈（独立页，从「我的」进入） ----------
+function vFeedback() {
+  $('#view').innerHTML = `
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+        <div class="avatar" style="background:#e6f5ee;color:#0f8a5f">💬</div>
+        <div class="grow"><b style="font-size:15px">意见反馈</b><div class="sub">问题和建议都会直达开发者</div></div>
+      </div>
+      <div class="field"><textarea id="fb-text" rows="6" maxlength="500" placeholder="说说你遇到的问题或想加的功能（5-500 字）&#10;例如：希望搜索结果能按课程筛选"></textarea></div>
+      <div class="sub" style="text-align:right;margin:-8px 2px 14px"><span id="fb-count">0</span>/500</div>
+      <button class="btn" id="fb-go">提交反馈</button>
+      <div class="center muted" style="margin-top:12px;font-size:11.5px">每一条反馈开发者都会亲自看，感谢帮书市变得更好 🌱</div>
+    </div>`;
+  const ta = $('#fb-text');
+  ta.oninput = () => { $('#fb-count').textContent = ta.value.length; };
+  $('#fb-go').onclick = submitFeedback;
+}
+
 async function submitFeedback() {
   const text = ($('#fb-text') || {}).value?.trim() || '';
   if (text.length < 5) return toast('反馈内容至少 5 个字');
   if (text.length > 500) return toast('反馈内容最多 500 字');
-  const btn = $('#fb-go'); btn.disabled = true;
+  const btn = $('#fb-go'); btn.disabled = true; btn.textContent = '提交中…';
   try {
     await POST('/feedback', { content: text });
     toast('感谢反馈！已直达开发者');
-    $('#fb-text').value = '';
-    btn.disabled = false;
-  } catch (e) { btn.disabled = false; toast(e.message); }
+    navTo('#/me');
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '提交反馈';
+    toast(e.message);
+  }
 }
 
 function logout() {

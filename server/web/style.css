@@ -1,5 +1,11 @@
 /* WHU二手书市 网页版 · 视觉升级版 */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* 强制白天模式：系统/浏览器开深色也保持浅色（color-scheme 管原生控件配色，
+   显式背景/前景色兜底部分安卓 WebView 的"强制深色"启发式） */
+:root { color-scheme: light; }
+html { background: #eef1f4; }
+input, select, textarea { background-color: #fff; color: #232a30; }
+select option { background-color: #fff; color: #232a30; }
 html, body { height: 100%; }
 body {
   font-family: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;
