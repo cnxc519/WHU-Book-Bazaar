@@ -1,11 +1,17 @@
 /* WHU二手书市 网页版 · 视觉升级版 */
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-/* 强制白天模式：系统/浏览器开深色也保持浅色（color-scheme 管原生控件配色，
-   显式背景/前景色兜底部分安卓 WebView 的"强制深色"启发式） */
-:root { color-scheme: light; }
+/* 强制白天模式（参考 self-website 的成功做法）：
+   only light 明确告知浏览器本页只有浅色形态，禁用 UA 的深色表单控件与自动反色；
+   forced-color-adjust:none 脱离强制色彩调整；
+   再用 dark 媒体查询 + !important 反向钉死浅色，兜底安卓 WebView"强制深色"启发式 */
+:root { color-scheme: only light; forced-color-adjust: none; }
 html { background: #eef1f4; }
 input, select, textarea { background-color: #fff; color: #232a30; }
 select option { background-color: #fff; color: #232a30; }
+@media (prefers-color-scheme: dark) {
+  html, body { background-color: #eef1f4 !important; color: #232a30 !important; }
+  input, select, textarea { background-color: #fff !important; color: #232a30 !important; }
+}
 html, body { height: 100%; }
 body {
   font-family: -apple-system, 'PingFang SC', 'HarmonyOS Sans SC', 'Microsoft YaHei', sans-serif;

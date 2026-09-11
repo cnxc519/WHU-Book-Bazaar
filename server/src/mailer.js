@@ -14,7 +14,7 @@ if (cfg.smtp && cfg.smtp.host) {
 }
 
 const CODE_TTL = 10 * 60 * 1000; // 10 分钟有效
-const CODES_PER_DAY = 10;
+const CODES_PER_DAY = 20;
 
 // 重要消息邮件：买家第一次针对某本书联系卖家时提醒（普通聊天不发，避免打扰）。
 // 尽力而为：失败只记日志，不影响主流程；未配置 SMTP 时静默跳过
