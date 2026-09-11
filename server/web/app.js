@@ -624,7 +624,7 @@ async function loadMine() {
 }
 async function bookStatus(id, st) {
   const sold = st === 'sold';
-  if (sold && !confirm('标记后本书所有信息将从平台删除，且无法再与买家取得联系。确认已当面交接？')) return;
+  if (sold && !confirm('标记后本书所有信息将从书市删除（已产生的会话仍可继续沟通）。确认已当面交接？')) return;
   try { await POST(`/books/${id}/status`, { status: st }); toast(sold ? '已标记售出' : '已更新'); loadMine(); }
   catch (e) { toast(e.message); }
 }

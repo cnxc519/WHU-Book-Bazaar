@@ -297,7 +297,7 @@ Item {
         if (st === "sold") {
             Ui.confirm({
                 title: "标记为已售出？",
-                text: "标记后该书将下架，买家无法再看到和联系。确认已完成当面交易后再操作。",
+                text: "标记后本书不再在书市展示，已联系的买家仍可继续沟通。确认已完成当面交易后再操作。",
                 okText: "已售出",
                 danger: true
             }, function (ok) { if (ok) doIt() })
