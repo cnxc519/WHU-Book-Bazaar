@@ -57,12 +57,14 @@ router.post('/', (req, res) => {
   const location = String(req.body.location || '').trim();
   const pickupOk = req.body.pickup_ok ? 1 : 0;
   if (title.length < 1 || title.length > 40) return fail(res, '书名需为 1-40 字');
-  if (location.length < 2 || location.length > 30) return fail(res, '请填写交易地点（2-30 字，方便卖家判断是否方便）');
+  if (location.length > 30) return fail(res, '地点最多 30 字');
+  // 可自提时地点可不填（卖家上门取）；希望送到附近才需要给个参考地点
+  if (!pickupOk && location.length < 2) return fail(res, '请填写交易地点（2-30 字；选"可自提"时可以不填）');
   if (course.length > 30) return fail(res, '课程名最多 30 字');
   if (note.length > 300) return fail(res, '补充说明最多 300 字');
 
   const r = db.prepare(`INSERT INTO wishes(buyer_id,title,course,note,location,pickup_ok,created_at) VALUES(?,?,?,?,?,?,?)`)
-    .run(me.id, title, course || null, note || null, location, pickupOk, new Date().toISOString());
+    .run(me.id, title, course || null, note || null, location || null, pickupOk, new Date().toISOString());
   ok(res, { id: r.lastInsertRowid });
 });
 
@@ -164,8 +166,10 @@ router.post('/batch', batchUpload.single('file'), (req, res) => {
   if (!titles.length || titles.length > ANALYZE_MAX) return fail(res, `请填写 1-${ANALYZE_MAX} 个书名`);
   if (titles.some((t) => t.length > 40)) return fail(res, '书名最长 40 字');
   const location = String(req.body.location || '').trim();
-  if (location.length < 2 || location.length > 30) return fail(res, '请填写交易地点（2-30 字，方便卖家判断是否方便）');
+  if (location.length > 30) return fail(res, '地点最多 30 字');
   const pickupOk = req.body.pickup_ok === '1' || req.body.pickup_ok === 'true' ? 1 : 0;
+  // 可自提时地点可不填（同单条心愿）
+  if (!pickupOk && location.length < 2) return fail(res, '请填写交易地点（2-30 字；选"可自提"时可以不填）');
 
   const now = new Date().toISOString();
   const ids = [];
@@ -337,6 +341,8 @@ router.post('/:id/status', (req, res) => {
     return ok(res, { id: w.id, status: 'done' });
   }
   db.prepare(`UPDATE wishes SET status=? WHERE id=?`).run(st, w.id);
+  // 重新上架时把发布时间重置为现在：心愿 2 个月时效（见 sweeps.js）从重新上架重新计
+  if (st === 'on') db.prepare(`UPDATE wishes SET created_at=? WHERE id=?`).run(new Date().toISOString(), w.id);
   ok(res, { id: w.id, status: st });
 });
 

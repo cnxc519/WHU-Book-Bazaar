@@ -305,6 +305,13 @@ h2.sec { font-size: 16px; font-weight: 800; margin: 6px 4px 12px; }
   max-width: 100%; max-height: calc(100vh - 140px);
   border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
 }
+/* 书单示例：原尺寸 + 框内滚动，保证表格文字清晰可读 */
+.img-box.scrollable {
+  max-width: 100%; max-height: calc(100vh - 110px);
+  overflow: auto; -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+}
+.img-box.scrollable img { max-width: none; max-height: none; border-radius: 14px; display: block; }
 
 /* ---------- 注册协议勾选行：勾选框紧贴文字 ---------- */
 .agree-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; }

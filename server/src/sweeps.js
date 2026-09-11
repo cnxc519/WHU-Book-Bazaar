@@ -6,6 +6,12 @@ const { pushToUser } = require('./ws');
 const { nowTs } = require('./util');
 const { gradeWindow } = require('./business');
 
+function notify(userId, type, title, body, data) {
+  const r = db.prepare(`INSERT INTO notifications(user_id,type,title,body,data_json,created_at) VALUES(?,?,?,?,?,?)`)
+    .run(userId, type, title, body, JSON.stringify(data || {}), nowTs());
+  pushToUser(userId, { t: 'notif', n: { id: r.lastInsertRowid, type, title, body, data } });
+}
+
 // 年度下架：settings.grad_sweep_done 记录已清到的最老年级，同一学年只执行一次
 // （8 月 10 日后的首个执行点触发；管理员事后恢复的书不会被反复扫掉）
 function sweepGraduatedBooks() {
@@ -45,9 +51,31 @@ function sweepGraduatedBooks() {
   } catch (e) { console.log('[sweep] 毕业年级书籍下架失败:', e.message); }
 }
 
-function initSweeps() {
-  sweepGraduatedBooks();               // 启动即补一次（覆盖停机跨过 8 月 10 日的情况）
-  setInterval(sweepGraduatedBooks, 3600e3); // 每小时巡检一次，8 月 10 日当天即可生效
+// 心愿时效：心愿具有学期性/时效性，发布（或重新上架）满 2 个月自动下架，
+// 防止过期的求购长期挂在心愿单里；重新上架会重置发布时间（见 routes/wishes.js）
+const WISH_TTL_DAYS = 60;
+
+function sweepExpiredWishes() {
+  try {
+    const cutoff = new Date(nowTs() - WISH_TTL_DAYS * 86400e3).toISOString();
+    const rows = db.prepare(`SELECT id, title, buyer_id FROM wishes WHERE status='on' AND created_at < ?`).all(cutoff);
+    if (!rows.length) return;
+    for (const w of rows) {
+      db.prepare(`UPDATE wishes SET status='off' WHERE id=? AND status='on'`).run(w.id);
+      notify(w.buyer_id, 'wish_expire', '心愿已到期自动下架',
+        `心愿《${w.title}》发布已满 2 个月，按平台规则自动下架（心愿有学期性，过期求购会打扰大家）；如仍需要，可在「求购」页重新上架，时效重新计算`, {});
+    }
+    console.log('[sweep] 到期心愿自动下架:', rows.length, '条');
+  } catch (e) { console.log('[sweep] 心愿到期下架失败:', e.message); }
 }
 
-module.exports = { initSweeps, sweepGraduatedBooks };
+function initSweeps() {
+  sweepGraduatedBooks();               // 启动即补一次（覆盖停机跨过 8 月 10 日的情况）
+  sweepExpiredWishes();
+  setInterval(() => {
+    sweepGraduatedBooks();
+    sweepExpiredWishes();
+  }, 3600e3);                          // 每小时巡检一次，8 月 10 日当天即可生效
+}
+
+module.exports = { initSweeps, sweepGraduatedBooks, sweepExpiredWishes };

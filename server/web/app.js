@@ -176,16 +176,18 @@ function renderTabbar() {
   ).join('');
 }
 
-// 摆放示例灯箱：展示标准摆拍/书单示例照片，点击任意处关闭
+// 摆放示例灯箱：展示标准摆拍/书单示例照片，点击任意处关闭。
+// 书单表格文字小，心愿示例用原尺寸 + 可滚动查看（缩放会看不清）
 function showExample(ev, img) {
   ev?.stopPropagation();
   const src = img || '/example-books.jpg';
-  const tip = src.includes('wish')
-    ? '像这样把书单拍清楚 ↑ 已划掉的书 AI 会自动排除，只认需要买的书'
+  const isWish = src.includes('wish');
+  const tip = isWish
+    ? '书单原图按原始大小展示，可拖动查看 ↑ 已划掉的书 AI 会自动排除，只认需要买的书'
     : '像这样把书竖直排开、书名朝外拍一张 ↑ 点击任意处关闭';
   const ov = document.createElement('div');
   ov.className = 'img-overlay';
-  ov.innerHTML = `<div class="img-box"><img src="${src}" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">${tip}</div></div>`;
+  ov.innerHTML = `<div class="img-box${isWish ? ' scrollable' : ''}"><img src="${src}" alt="摆放示例"><div class="sub" style="color:#dfe5e9;margin-top:10px">${tip}</div></div>`;
   ov.onclick = () => ov.remove();
   document.body.appendChild(ov);
 }
@@ -815,28 +817,28 @@ function wishBatchHtml() {
       </div>
       <div id="wtitles" style="margin-top:9px"></div>
     </div>
-    <div class="field"><label>交易地点（必填，所有心愿共用）</label><input id="wt-loc" placeholder="方便卖家约的地点，如：湖滨寓园门口"></div>
+    <div class="field"><label>交易地点（选"可自提"可不填）</label><input id="wt-loc" placeholder="希望送到附近的话，填个参考地点"></div>
     <div class="field"><label>可自提</label><div class="chips" id="wt-pickup">
-      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，希望送到附近</button></div>
+      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，可沟通地点</button></div>
       <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 1px">选"可自提"卖家不用跑腿，更容易等到这本书</div></div>
-    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。<br>⏳ 心愿有学期性：发布 2 个月后会自动下架，需要可在「求购」页重新上架。</div>
     <button class="btn" id="wt-go"></button>`;
 }
 function wishSingleHtml() {
   return `
     <div class="field"><label>书名（必填，1-40 字）</label><input id="ws-title" placeholder="例如：高等数学（第七版）下册 同济版"></div>
-    <div class="field"><label>对应课程（选填）</label><input id="ws-course" placeholder="例如：高等数学 AB"></div>
-    <div class="field"><label>补充说明（选填，≤300 字）</label><textarea id="ws-note" rows="2" placeholder="版本/作者/品相要求等，例如：旧版就行，笔记多也没关系"></textarea></div>
-    <div class="field"><label>交易地点（必填）</label><input id="ws-loc" placeholder="方便卖家约的地点"></div>
+    <div class="field"><label>交易地点（选"可自提"可不填）</label><input id="ws-loc" placeholder="希望送到附近的话，填个参考地点"></div>
     <div class="field"><label>可自提</label><div class="chips" id="ws-pickup">
-      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，希望送到附近</button></div></div>
-    <div class="field"><label>参考图（选填，如学校书单截图）<button class="chip small" style="float:right" id="ws-extra-toggle">${wishImg ? '收起参考图 ▲' : '加参考图 ▼'}</button></label>
+      <button class="chip" data-v="1">🤝 可以，我上门取</button><button class="chip" data-v="0">不方便，可沟通地点</button></div></div>
+    <div class="field"><label>选填项（课程 · 补充说明 · 参考图）<button class="chip small" style="float:right" id="ws-extra-toggle">${wishImg ? '收起选填项 ▲' : '展开选填项 ▼'}</button></label>
       <div id="ws-extra" style="display:${wishImg ? 'block' : 'none'}">
+      <input id="ws-course" placeholder="对应课程（选填），例如：高等数学 AB" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:10px">
+      <textarea id="ws-note" rows="2" placeholder="补充说明（选填，≤300 字），例如：旧版就行，笔记多也没关系" style="width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;margin-bottom:10px"></textarea>
       <div class="row"><div class="up-box" id="ws-upbox" onclick="$('#ws-file').click()">${wishImg ? `<img src="${wishImg}">` : '📷<br>加图片'}</div>
       <div class="grow sub">选填；放书单截图方便卖家对照</div></div>
       <input type="file" id="ws-file" accept="image/*" class="hidden">
     </div></div>
-    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有卖家联系你的心愿时，会发送<b>邮件通知</b>提醒你，重要消息不错过。<br>⏳ 心愿有学期性：发布 2 个月后会自动下架，需要可在「求购」页重新上架。</div>
     <button class="btn" id="ws-go">发布心愿</button>`;
 }
 let wishPickup = 1; // 0/1，可自提（默认可以上门取，更容易等到这本书）
@@ -899,8 +901,9 @@ function bindWishBatch() {
     if (!titles.length) return toast('请至少填写一个书名');
     if (titles.length > 20) return toast('一次最多发布 20 条心愿');
     const loc = $('#wt-loc').value.trim();
-    if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
-    if (!confirm(`将一次发布 ${titles.length} 条求购心愿：共用地点「${loc}」${wishPickup ? '、标记可自提' : ''}。有卖家联系你时会邮件通知你。确认发布？`)) return;
+    if (loc.length > 30) return toast('地点最多 30 字');
+    if (!wishPickup && loc.length < 2) return toast('请填写交易地点（2-30 字；选"可自提"时可以不填）');
+    if (!confirm(`将一次发布 ${titles.length} 条求购心愿：共用地点「${loc || '可自提，无需固定地点'}」。有卖家联系你时会邮件通知你。确认发布？`)) return;
     const btn = $('#wt-go'); btn.disabled = true; btn.textContent = '发布中…';
     try {
       const fd = new FormData();
@@ -921,7 +924,7 @@ function bindWishSingle() {
     const box = $('#ws-extra');
     const open = box.style.display !== 'none';
     box.style.display = open ? 'none' : 'block';
-    $('#ws-extra-toggle').textContent = open ? '加参考图 ▼' : '收起参考图 ▲';
+    $('#ws-extra-toggle').textContent = open ? '展开选填项 ▼' : '收起选填项 ▲';
   };
   $('#ws-file').onchange = async (e) => {
     const f = e.target.files[0];
@@ -937,7 +940,8 @@ function bindWishSingle() {
     const note = $('#ws-note').value.trim();
     const loc = $('#ws-loc').value.trim();
     if (title.length < 1) return toast('请填写书名');
-    if (loc.length < 2) return toast('请填写交易地点（2-30 字）');
+    if (loc.length > 30) return toast('地点最多 30 字');
+    if (!wishPickup && loc.length < 2) return toast('请填写交易地点（2-30 字；选"可自提"时可以不填）');
     const btn = $('#ws-go'); btn.disabled = true;
     try {
       const d = await POST('/wishes', { title, course, note, location: loc, pickup_ok: wishPickup });
@@ -1219,7 +1223,7 @@ async function vMe() {
       <button class="btn small ghost">去反馈</button>
     </div>
     <div class="card">
-      <div class="sub" style="line-height:1.8">WHU二手书市 · 网页版 v1.0<br>平台仅提供信息展示，不参与交易。<br>线下交易请当面验书、当面付款。</div>
+      <div class="sub" style="line-height:1.8">WHU二手书市 · 网页版 v1.1<br>平台仅提供信息展示，不参与交易。<br>线下交易请当面验书、当面付款。</div>
     </div>
     <button class="btn danger" onclick="logout()">退出登录</button>
     <input type="file" id="av-file" accept="image/*" class="hidden">`;
