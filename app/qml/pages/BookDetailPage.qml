@@ -148,7 +148,7 @@ Item {
 
                 NoticeBar {
                     width: parent.width
-                    visible: page.detail && !page.detail.is_seller && page.detail.status === "on"
+                    visible: page.detail && !page.detail.is_seller && page.detail.status !== "sold"
                     text: "平台仅提供信息展示与联系，不参与交易：请先聊好价格与地点，见面当面验书、满意再付款。"
                 }
                 NoticeBar {
@@ -245,7 +245,7 @@ Item {
                 // ---------- 联系卖家 ----------
                 AppButton {
                     width: parent.width
-                    visible: page.detail && !page.detail.is_seller && page.detail.status === "on"
+                    visible: page.detail && !page.detail.is_seller && page.detail.status !== "sold"
                     text: page.detail && page.detail.my_thread ? "继续和卖家聊" : "💬 联系卖家"
                     onClicked: page.contact()
                 }

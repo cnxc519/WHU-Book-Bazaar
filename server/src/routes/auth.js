@@ -1,11 +1,13 @@
 // 认证：邮箱验证码注册/登录（无密码）、个人资料、头像上传
 const path = require('path');
+const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const express = require('express');
 const multer = require('multer');
 const { db, getSettings } = require('../db');
 const { sendCode, verifyCode } = require('../mailer');
 const { signUserToken, requireUser } = require('../auth');
+const { cfg } = require('../config');
 const { ok, fail, isEmail, inviteCode, makeLimiter, cleanupLimiter, nowTs } = require('../util');
 const { pushToUser } = require('../ws');
 
@@ -89,6 +91,73 @@ router.post('/login', (req, res) => {
   if (!v.ok) return fail(res, v.msg);
   if (user.banned) return fail(res, '账号已被封禁', 403, 'BANNED');
   ok(res, { token: signUserToken(user.id), user: { id: user.id, email: user.email, nickname: user.nickname, gender: user.gender, avatar: user.avatar, school_id: user.school_id } });
+});
+
+// ---------- 登录/注册统一入口（网页版） ----------
+// 两段式：先 check（邮箱+验证码）—— 已注册直接登录；
+// 未注册返回一次性 pending 票据，补昵称/学校/性别后 complete-register 完成注册。
+// 好处：验证码先发后补资料，未注册用户不用重新收码。
+function signPending(email) {
+  return jwt.sign({ email, role: 'pending' }, cfg.jwt_secret, { expiresIn: 10 * 60 * 1000 });
+}
+
+router.post('/login-or-register', (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const code = String(req.body.code || '').trim();
+  if (!isEmail(email)) return fail(res, '邮箱格式不正确');
+  if (!code) return fail(res, '请填写验证码');
+  const lr = limLogin.check(`login:${req.ip}:${email}`);
+  if (!lr.ok) return fail(res, '尝试次数过多，请 10 分钟后再试');
+  const v = verifyCode(email, 'login', code);
+  if (!v.ok) return fail(res, v.msg);
+  const user = db.prepare(`SELECT * FROM users WHERE email=?`).get(email);
+  if (user) {
+    if (user.banned) return fail(res, '账号已被封禁', 403, 'BANNED');
+    return ok(res, {
+      registered: true,
+      token: signUserToken(user.id),
+      user: { id: user.id, email: user.email, nickname: user.nickname, gender: user.gender, avatar: user.avatar, school_id: user.school_id },
+    });
+  }
+  ok(res, { registered: false, pending: signPending(email) });
+});
+
+router.post('/complete-register', (req, res) => {
+  let email = '';
+  try {
+    const p = jwt.verify(String(req.body.pending || ''), cfg.jwt_secret);
+    if (p.role !== 'pending') throw new Error('bad role');
+    email = String(p.email || '').toLowerCase();
+  } catch {
+    return fail(res, '注册会话已过期，请重新获取验证码');
+  }
+  const existed = db.prepare(`SELECT id FROM users WHERE email=?`).get(email);
+  if (existed) return ok(res, { already: true, token: signUserToken(existed.id) });
+  const nickname = String(req.body.nickname || '').trim();
+  const schoolId = parseInt(req.body.school_id, 10);
+  const gender = req.body.gender === 'male' ? 'male' : req.body.gender === 'female' ? 'female' : null;
+  const inv = String(req.body.invite || '').trim().toUpperCase();
+  if (nickname.length < 1 || nickname.length > 20) return fail(res, '昵称需为 1-20 个字符');
+  const school = db.prepare(`SELECT id FROM schools WHERE id=?`).get(schoolId);
+  if (!school) return fail(res, '请选择学校');
+  if (!gender) return fail(res, '请选择性别');
+  let invitedBy = null;
+  if (inv) {
+    const inviter = db.prepare(`SELECT id,nickname FROM users WHERE invite_code=? AND id!=0`).get(inv);
+    if (!inviter) return fail(res, '邀请码不存在');
+    invitedBy = inviter.id;
+  }
+  let codeStr;
+  do { codeStr = inviteCode(); } while (db.prepare(`SELECT id FROM users WHERE invite_code=?`).get(codeStr));
+  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?)`)
+    .run(email, nickname, schoolId, gender, codeStr, invitedBy, new Date().toISOString());
+  const uid = r.lastInsertRowid;
+  if (invitedBy) {
+    db.prepare(`INSERT INTO notifications(user_id,type,title,body,created_at) VALUES(?,?,?,?,?)`)
+      .run(invitedBy, 'invite_used', '邀请成功', `${nickname} 通过你的邀请码注册啦，你们现在是好友啦`, nowTs());
+    pushToUser(invitedBy, { t: 'notif' });
+  }
+  ok(res, { token: signUserToken(uid), user: { id: uid, email, nickname, gender } });
 });
 
 // 当前用户信息

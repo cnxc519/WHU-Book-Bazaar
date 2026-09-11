@@ -257,7 +257,8 @@ router.get('/:id', (req, res) => {
   const b = db.prepare(`SELECT * FROM books WHERE id=?`).get(parseInt(req.params.id, 10));
   if (!b) return fail(res, '书籍不存在', 404, 'NOT_FOUND');
   const isSeller = b.seller_id === me.id;
-  if (!isSeller && b.status !== 'on') return fail(res, '该书籍已下架或售出', 404, 'NOT_FOUND');
+  // 已下架的书买家仍可查看详情并联系（沟通好未见面就下架的场景）；已售出=已删除，查不到自然 404
+  if (!isSeller && !['on', 'off'].includes(b.status)) return fail(res, '该书籍已售出', 404, 'NOT_FOUND');
   const seller = db.prepare(`SELECT * FROM users WHERE id=?`).get(b.seller_id);
   // 数据按学校隔离：只能查看本校同学的书（已有的跨校会话买家不受影响，可继续交易）
   const myThread = isSeller ? null : db.prepare(`SELECT id, unread_buyer FROM book_chats WHERE book_id=? AND buyer_id=?`).get(b.id, me.id);
@@ -320,7 +321,7 @@ router.post('/:id/contact', (req, res) => {
   const b = db.prepare(`SELECT * FROM books WHERE id=?`).get(parseInt(req.params.id, 10));
   if (!b) return fail(res, '书籍不存在', 404, 'NOT_FOUND');
   if (b.seller_id === me.id) return fail(res, '不能联系自己');
-  if (b.status !== 'on') return fail(res, '该书籍不在售（可能已下架或售出）');
+  if (b.status === 'sold') return fail(res, '该书籍已标记售出'); // off（下架）也允许联系：沟通好未见面就下架的场景
   const seller = db.prepare(`SELECT banned,school_id FROM users WHERE id=?`).get(b.seller_id);
   if (!seller || seller.banned) return fail(res, '卖家账号异常，暂无法联系');
   // 数据按学校隔离：只能联系本校卖家（线下当面交易，跨校见不了面）

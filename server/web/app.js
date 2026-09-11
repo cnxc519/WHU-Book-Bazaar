@@ -146,7 +146,8 @@ function showExample(ev) {
 }
 
 function render() {
-  let hash = location.hash || '#/browse';
+  // hash 可能带查询参数（如邀请链接 #/login?invite=XXX），路由匹配前剥掉
+  let hash = (location.hash || '#/browse').split('?')[0];
   const logged = isLogin();
   // 未登录一律先到登录/注册页
   if (!logged && !hash.startsWith('#/login') && !hash.startsWith('#/register')) hash = '#/login';
@@ -165,29 +166,104 @@ function render() {
 window.addEventListener('hashchange', render);
 
 // ---------- 登录 / 注册 ----------
+// 登录/注册合一：先邮箱+验证码，未注册就地补资料（验证码不白发）
+let loginStep = 1;
+let loginEmail = '';
+let loginPending = '';
+let loginInvite = '';
+
 function vLogin() {
+  // 邀请链接携带：#/?invite=CODE 或 #/login?invite=CODE
+  const mq = location.hash.match(/[?&]invite=([A-Za-z0-9]+)/);
+  if (mq) loginInvite = mq[1].toUpperCase();
+
+  const step1 = `
+    <div class="field"><label>邮箱（武大邮箱或其他邮箱均可）</label><input id="lg-email" type="email" placeholder="邮箱"></div>
+    <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
+    <button class="btn" id="lg-btn">登录 / 注册</button>
+    <div class="center muted" style="margin-top:12px">未注册将自动进入注册，验证码不会白发</div>`;
+  const step2 = `
+    <div class="field"><label>昵称（1-20 字）</label><input id="lg-nick" placeholder="给自己起个昵称"></div>
+    <div class="field"><label>学校</label><select id="lg-school"><option value="">加载中…</option></select></div>
+    <div class="field"><label>性别</label><div class="chips" id="lg-gender">
+      <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div></div>
+    ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
+    <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
+    <div class="row" style="margin-top:6px"><input type="checkbox" id="lg-agree" checked><label for="lg-agree" style="margin:0">我已阅读并同意以上协议</label></div></div>
+    <button class="btn" id="lg-finish">完成注册</button>`;
+
   $('#view').innerHTML = `
     <div style="background:radial-gradient(circle at 85% -20%,rgba(255,255,255,.15) 0 70px,transparent 71px),linear-gradient(135deg,#0d7a54,#12a06f);color:#fff;border-radius:0 0 26px 26px;margin:-12px -14px 18px;padding:42px 26px 60px">
       <div style="font-size:30px;font-weight:800;letter-spacing:1px;display:flex;align-items:center;gap:12px">
-        <img src="/appicon.png" style="width:46px;height:46px">WHU二手书市</div>
+        <img src="/appicon.png" style="width:40px;height:40px">WHU二手书市</div>
       <div style="font-size:13px;opacity:.92;margin-top:8px">教材课本 · 让好书继续流转</div>
     </div>
     <div class="card overlap">
-      <div class="field"><label>邮箱（武大邮箱或其他邮箱均可）</label><input id="lg-email" type="email" placeholder="邮箱"></div>
-      <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
-      <button class="btn" id="lg-btn">登 录</button>
-      <div class="center muted" style="margin-top:12px">没有账号？<span class="linkish" onclick="go('#/register')">去注册</span></div>
+      <div id="lg-step">${loginStep === 2 ? step2 : step1}</div>
+      <div class="center muted" style="margin-top:12px">售卖闲置教材，请当面验书、当面付款</div>
     </div>`;
+
   bindCode('#lg-email', '#lg-send', 'login');
+  let gender = '';
+  document.querySelectorAll('#lg-gender .chip').forEach((c) => c.onclick = () => {
+    gender = c.dataset.v;
+    document.querySelectorAll('#lg-gender .chip').forEach((x) => x.classList.toggle('on', x === c));
+  });
+
+  // 学校下拉（进入第二步时加载）
+  function loadSchools() {
+    GET('/schools').then((d) => {
+      const sel = $('#lg-school');
+      if (!sel) return;
+      sel.innerHTML = d.list.map((s2) => `<option value="${s2.id}">${esc(s2.name)}</option>`).join('');
+    }).catch(() => {});
+  }
+  if (loginStep === 2) loadSchools();
+
+  // 第一步：验证码校验 → 已注册登录 / 未注册进入第二步
   $('#lg-btn').onclick = async () => {
+    loginEmail = $('#lg-email').value.trim();
+    const code = $('#lg-code').value.trim();
+    if (!loginEmail) return toast('请填写邮箱');
+    if (!code) return toast('请填写验证码');
+    const btn = $('#lg-btn'); btn.disabled = true;
     try {
-      const d = await POST('/auth/login', { email: $('#lg-email').value.trim(), code: $('#lg-code').value.trim() });
-      setToken(d.token); window._myId = d.user.id; toast('登录成功'); navTo('#/browse');
+      const d = await POST('/auth/login-or-register', { email: loginEmail, code });
+      if (d.registered) {
+        setToken(d.token); window._myId = d.user.id;
+        toast('欢迎回来～'); navTo('#/browse');
+      } else {
+        loginPending = d.pending;
+        loginStep = 2;
+        vLogin();
+        toast('还差最后一步：填写昵称就完成注册啦');
+      }
     } catch (e) { toast(e.message); }
+    btn.disabled = false;
+  };
+
+  // 第二步：完成注册
+  const finish = $('#lg-finish');
+  if (finish) finish.onclick = async () => {
+    const nickname = ($('#lg-nick') || {}).value?.trim() || '';
+    const schoolId = +(($('#lg-school') || {}).value || 0);
+    if (!nickname) return toast('请填写昵称');
+    if (!schoolId) return toast('学校加载中，稍等一下');
+    if (!gender) return toast('请选择性别');
+    if (!$('#lg-agree').checked) return toast('请勾选同意注册协议');
+    finish.disabled = true;
+    try {
+      const d = await POST('/auth/complete-register', {
+        pending: loginPending, nickname, school_id: schoolId, gender, invite: loginInvite,
+      });
+      setToken(d.token); window._myId = d.user.id;
+      toast('注册成功，欢迎加入！'); navTo('#/browse');
+    } catch (e) { finish.disabled = false; toast(e.message); }
   };
 }
 
-function vRegister() {
+function vRegister() { return vLogin(); // 注册已收敛进登录页
+
   let schoolId = 0;
   $('#view').innerHTML = `
     <div class="card">
@@ -328,7 +404,7 @@ async function vBook(hash) {
       ? `<button class="btn ghost" onclick="go('#/sell')">管理我的书（卖书页）</button>`
       : (b.my_thread
         ? `<button class="btn" onclick="go('#/chat/${b.my_thread.chat_id}')">继续聊天</button>`
-        : (b.status === 'on' ? `<button class="btn" id="contact-btn">💬 联系卖家</button>` : ''))}
+        : ((b.status === 'on' || b.status === 'off') ? `<button class="btn" id="contact-btn">💬 联系卖家</button>` : ''))}
     ${d.is_seller ? '' : `<button class="btn danger" style="margin-top:10px" id="report-btn">🚩 举报该书籍（虚假信息等提交平台审核）</button>`}`;
   const cb = $('#contact-btn');
   if (cb) cb.onclick = async () => {
@@ -661,6 +737,16 @@ async function vInvite() {
       <button class="btn small" style="margin:0 auto" onclick="navigator.clipboard.writeText($('#inv-code').textContent).then(()=>toast('邀请码已复制'))">复制邀请码</button>
     </div>
     <div class="card"><div class="sub">把邀请码分享给同学，注册时填写即可成为好友。已邀请 <b>${d.invited_count}</b> 位同学。</div></div>
+    <div class="card" style="background:linear-gradient(135deg,#e6f5ee,#f2fbf7)">
+      <div class="row">
+        <div style="font-size:24px">🔗</div>
+        <div class="grow">
+          <b style="font-size:14px">复制邀请链接</b>
+          <div class="sub" style="margin-top:2px;word-break:break-all" id="inv-link">${esc(location.origin + '/#/login?invite=' + d.invite_code)}</div>
+        </div>
+        <button class="btn small" onclick="navigator.clipboard.writeText($('#inv-link').textContent).then(()=>toast('链接已复制，发给同学吧'))">复制</button>
+      </div>
+    </div>
     <h2 class="sec">我邀请的好友（${d.friends.length}）</h2>
     ${d.friends.length ? d.friends.map((f) => `<div class="card seller-card"><div class="avatar">${esc(f.nickname[0])}</div><div><b>${esc(f.nickname)}</b><div class="sub">${fmtTime(f.created_at)} 加入</div></div></div>`).join('') : '<div class="empty">还没有邀请好友</div>'}`;
 }
