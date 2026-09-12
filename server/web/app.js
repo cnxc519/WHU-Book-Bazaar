@@ -259,7 +259,7 @@ function vLogin() {
     if (nick && !nick.value) {
       const A = ['晚风', '清梦', '拾光', '折月', '衔星', '青野', '白鹭', '春屿', '木南', '观夏', '闻笛', '眠鸥'];
       const B = ['翻书', '煮书', '书虫', '藏书', '书旅', '品书', '书灯', '书檐'];
-      nick.value = A[Math.floor(Math.random() * A.length)] + B[Math.floor(Math.random() * B.length)] + String(Math.floor(10 + Math.random() * 90));
+      nick.value = A[Math.floor(Math.random() * A.length)] + B[Math.floor(Math.random() * B.length)] + String(Math.floor(100 + Math.random() * 900));
     }
   }
 
