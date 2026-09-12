@@ -18,10 +18,12 @@ const CODES_PER_DAY = 20;
 
 // 重要消息邮件：买家第一次针对某本书联系卖家时提醒（普通聊天不发，避免打扰）。
 // 尽力而为：失败只记日志，不影响主流程；未配置 SMTP 时静默跳过
+const SITE_URL = 'book.this-is-my.world'; // 纯文本网址：客户端会自动转链接，降低垃圾邮件误判
+
 function notifyFirstContact(sellerEmail, bookTitle, buyerNickname) {
   if (!transporter || !sellerEmail) return;
-  const text = `买家 ${buyerNickname} 第一次联系你出售的《${bookTitle}》//请打开 App「消息」回复 TA。`
-      .replace('//', '，');
+  const text = `买家 ${buyerNickname} 第一次联系你出售的《${bookTitle}》，请打开网页版「消息」回复 TA。`
+      + `\n网页版地址：${SITE_URL}（无需下载 App）`;
   transporter.sendMail({
     from: cfg.mail_from, to: sellerEmail,
     subject: `【WHU二手书市】有人想买你的《${bookTitle}》`, text,
@@ -32,8 +34,8 @@ function notifyFirstContact(sellerEmail, bookTitle, buyerNickname) {
 // 与 notifyFirstContact 同策略：失败只记日志
 function notifyWishContact(buyerEmail, wishTitle, sellerNickname) {
   if (!transporter || !buyerEmail) return;
-  const text = `卖家 ${sellerNickname} 想出售你心愿单里的《${wishTitle}》，//请打开 App「消息」回复 TA，聊好版本品相当面交易。`
-      .replace('//', '，');
+  const text = `卖家 ${sellerNickname} 想出售你心愿单里的《${wishTitle}》，请打开网页版「消息」回复 TA，聊好版本品相当面交易。`
+      + `\n网页版地址：${SITE_URL}`;
   transporter.sendMail({
     from: cfg.mail_from, to: buyerEmail,
     subject: `【WHU二手书市】有人想卖你心愿里的《${wishTitle}》`, text,
