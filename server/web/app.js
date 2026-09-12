@@ -811,7 +811,8 @@ function wishCardHtml(w) {
 }
 
 // ---------- 发心愿（求购页，想买书模式） ----------
-let wishMode = 'batch';
+// 默认单条在前（更符合求购习惯：大多数时候只求一两本）；卖书页保持批量在前
+let wishMode = 'single';
 let wishImg = '';           // 压缩后的书单/参考图 dataUrl（选填）
 let wishTitles = [];
 let editWishCover = 0;      // 换参考图的心愿 id
@@ -822,8 +823,8 @@ function vWishpost() {
     <div class="card">
       <div style="font-size:16px;font-weight:800;margin-bottom:10px">发布求购心愿</div>
       <div class="chips" style="margin-bottom:12px">
-        <button class="chip ${batch ? 'on' : ''}" id="wm-batch">📋 批量发心愿</button>
         <button class="chip ${!batch ? 'on' : ''}" id="wm-single">📝 单条心愿</button>
+        <button class="chip ${batch ? 'on' : ''}" id="wm-batch">📋 批量发心愿</button>
       </div>
       <div id="wish-body"></div>
     </div>
