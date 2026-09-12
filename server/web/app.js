@@ -132,7 +132,7 @@ const routes = {
   '#/inbox': vInbox, '#/chat': vChat,
   '#/notifications': vNotifications,
   '#/invite': vInvite, '#/me': vMe, '#/user': vUser,
-  '#/feedback': vFeedback,
+  '#/feedback': vFeedback, '#/guide': vGuide,
 };
 function go(hash) { location.hash = hash; }
 // 关键：目标 hash 与当前相同时 location.hash 赋值不会触发 hashchange，
@@ -233,7 +233,7 @@ function vLogin() {
     <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
     <button class="btn" id="lg-btn">登录 / 注册</button>`;
   const step2 = `
-    <div class="field"><label>昵称（已自动生成，可以随便改）</label><input id="lg-nick" maxlength="20" placeholder="给自己起个昵称"></div>
+    <div class="field"><label>昵称（已自动生成，可更改）</label><input id="lg-nick" maxlength="20" placeholder="给自己起个昵称"></div>
     ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
     <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
     <div class="agree-row"><input type="checkbox" id="lg-agree" checked><label for="lg-agree">我已阅读并同意以上协议</label></div></div>
@@ -253,10 +253,14 @@ function vLogin() {
   // 第二步没有验证码行和登录按钮，绑定必须按步骤区分（否则 null.onclick 报错中断）
   if (loginStep === 1) bindCode('#lg-email', '#lg-send', 'login');
 
-  // 昵称自动生成（朴素风格：书友 + 4 位数字），用户可直接改
+  // 昵称自动生成：意象词 + 书事词 + 2 位尾数（如「拾光煮书37」），好记又不易撞
   if (loginStep === 2) {
     const nick = $('#lg-nick');
-    if (nick && !nick.value) nick.value = '书友' + String(Math.floor(1000 + Math.random() * 9000));
+    if (nick && !nick.value) {
+      const A = ['晚风', '清梦', '拾光', '折月', '衔星', '青野', '白鹭', '春屿', '木南', '观夏', '闻笛', '眠鸥'];
+      const B = ['翻书', '煮书', '书虫', '藏书', '书旅', '品书', '书灯', '书檐'];
+      nick.value = A[Math.floor(Math.random() * A.length)] + B[Math.floor(Math.random() * B.length)] + String(Math.floor(10 + Math.random() * 90));
+    }
   }
 
   // 第一步：验证码校验 → 已注册登录 / 未注册进入第二步
@@ -294,9 +298,34 @@ function vLogin() {
         pending: loginPending, nickname, invite: loginInvite,
       });
       setToken(d.token); window._myId = d.user.id;
-      toast('注册成功，欢迎加入！'); navTo('#/browse');
+      navTo('#/guide'); // 注册成功先进引导页（登录不走这里）
     } catch (e) { finish.disabled = false; toast(e.message); }
   };
+}
+
+// ---------- 新手引导（注册完成进入一次） ----------
+function vGuide() {
+  $('#view').className = '';
+  $('#view').innerHTML = `
+    <div class="gd-hero gd-rise">
+      <div class="gd-badge">🎉</div>
+      <div class="gd-title">欢迎加入 WHU二手书市</div>
+      <div class="gd-sub">30 秒看懂怎么玩<br>底部「想买书 / 想卖书」两个模式随时切换</div>
+    </div>
+    <div class="gd-mode gd-rise" style="animation-delay:.12s">
+      <div class="gd-mode-head">🛒 想买书<span>切到此模式后 ↓</span></div>
+      <div class="gd-item"><b>书市</b><span>淘同学出的闲置书，模糊搜索很聪明（"线代"也能搜到"线性代数"）</span></div>
+      <div class="gd-item"><b>求购</b><span>发布心愿等书来找你：可拍书单让 AI 识别，划掉的会自动排除</span></div>
+    </div>
+    <div class="gd-mode gd-rise" style="animation-delay:.24s">
+      <div class="gd-mode-head">📚 想卖书<span>切到此模式后 ↓</span></div>
+      <div class="gd-item"><b>卖书</b><span>拍照上架，一摞书一张照 AI 批量识别；上架满 1 年自动下架，可重新上架</span></div>
+      <div class="gd-item"><b>心愿单</b><span>看看大家在找什么书——有货就联系 TA，生意自己送上门</span></div>
+    </div>
+    <div class="gd-tip gd-rise" style="animation-delay:.36s">💬 所有买卖沟通都在「消息」里；有人联系你会邮件提醒<br>🤝 平台不碰钱：见面当面验书、当面付款</div>
+    <button class="btn gd-go gd-rise" style="animation-delay:.48s" id="guide-go">开始逛书市 →</button>
+    <div class="center muted gd-rise" style="animation-delay:.56s;font-size:11.5px;margin-top:10px">「消息 / 邀请 / 我的」两个模式通用</div>`;
+  $('#guide-go').onclick = () => navTo('#/browse');
 }
 
 function vRegister() { return vLogin(); // 注册已收敛进登录页
