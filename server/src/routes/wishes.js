@@ -7,7 +7,7 @@ const multer = require('multer');
 const { db, tx, getSettings } = require('../db');
 const { requireUser } = require('../auth');
 const { ok, fail, nowTs, clampInt } = require('../util');
-const { gradeWindow, fuzzyHit } = require('../business');
+const { fuzzyHit } = require('../business');
 const { pushToUser } = require('../ws');
 const { notifyWishContact } = require('../mailer');
 
@@ -41,16 +41,9 @@ function getOwnWishOrFail(req, res) {
   return w;
 }
 
-// 毕业年级禁发（与 books.js 同一政策：8 月 10 日统一下架毕业年级内容）
-function gradBlocked(me) {
-  return me.grade > 0 && me.grade <= gradeWindow().cutoff;
-}
-const GRAD_BLOCK_MSG = '毕业年级账号暂不能发布/上架心愿；若你仍在读（如五年制、研究生），请通过「我的-反馈」联系我们';
-
 // ---------- 发布（单条） ----------
 router.post('/', (req, res) => {
   const me = req.user;
-  if (gradBlocked(me)) return fail(res, GRAD_BLOCK_MSG);
   const title = String(req.body.title || '').trim();
   const course = String(req.body.course || '').trim();
   const note = String(req.body.note || '').trim();
@@ -158,7 +151,6 @@ const batchUpload = multer({
 });
 
 router.post('/batch', batchUpload.single('file'), (req, res) => {
-  if (gradBlocked(req.user)) return fail(res, GRAD_BLOCK_MSG);
   let titles;
   try { titles = JSON.parse(String(req.body.titles || '[]')); } catch (e) { titles = null; }
   if (!Array.isArray(titles)) return fail(res, '书名列表格式不正确');
@@ -331,7 +323,6 @@ router.post('/:id/status', (req, res) => {
   if (!w) return;
   const st = req.body.status;
   if (!WISH_STATUS.includes(st)) return fail(res, '状态不正确');
-  if (st === 'on' && gradBlocked(req.user)) return fail(res, GRAD_BLOCK_MSG);
   if (st === 'done') {
     // 已买到 = 从平台删除：心愿与参考图一并清除，相关会话关闭（卖家无法再发起联系）；
     // 聊天消息保留（争议凭证），会话列表显示"已删除的心愿"

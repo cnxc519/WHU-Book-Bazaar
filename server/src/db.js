@@ -212,16 +212,14 @@ CREATE INDEX IF NOT EXISTS idx_wmsgs_chat ON wish_messages(chat_id, id);
   }
 }
 
-// 老库迁移：users 增加年级列（入学年份，如 2025 表示 25 级）。
-// 存量用户统一补为 25 级——grade=0 只存在于迁移前的旧行（注册接口必填年级，正常不会产生 0）
+// 老库迁移：users.grade 列（入学年份）。年级已不再收集（注册只填昵称），
+// 列保留作历史数据，新用户默认 0；一次性回填已完成，此处不再改动存量数据
 {
   const userCols = db.prepare(`PRAGMA table_info(users)`).all().map((c) => c.name);
   if (!userCols.includes('grade')) {
     db.exec(`ALTER TABLE users ADD COLUMN grade INTEGER NOT NULL DEFAULT 0`);
     console.log('[migrate] users 表已增加 grade 列');
   }
-  const gm = db.prepare(`UPDATE users SET grade=2025 WHERE grade=0`).run();
-  if (gm.changes) console.log('[migrate] 存量用户年级已统一设为 25 级（2025）:', gm.changes, '人');
 }
 
 // 学校与默认可调设置

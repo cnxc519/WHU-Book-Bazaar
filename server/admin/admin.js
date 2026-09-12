@@ -166,10 +166,10 @@ async function vUsers() {
         <button class="primary" onclick="userQ=$('#user-q').value;vUsers()">搜索</button>
       </div>
       <table>
-        <tr><th>ID</th><th>昵称</th><th>邮箱</th><th>性别</th><th>年级</th><th>学校</th><th>状态</th><th>操作</th></tr>
+        <tr><th>ID</th><th>昵称</th><th>邮箱</th><th>学校</th><th>状态</th><th>操作</th></tr>
         ${d.list.map((u) => `<tr>
           <td>${u.id}</td><td>${esc(u.nickname)}</td><td>${esc(u.email)}</td>
-          <td>${u.gender === 'male' ? '男' : '女'}</td><td>${u.grade ? (u.grade % 100) + '级' : '-'}</td><td>${esc(u.school)}</td>
+          <td>${esc(u.school)}</td>
           <td>${u.banned ? '<span class="tag red">已封禁</span>' : '<span class="tag green">正常</span>'}</td>
           <td>
             <button class="small" onclick="viewUser(${u.id})">详情</button>
@@ -190,10 +190,9 @@ async function viewUser(id) {
       <div class="toolbar"><h2 style="margin:0">用户 #${u.id} ${esc(u.nickname)}</h2><div class="spacer"></div>
         <button class="ghost" onclick="vUsers()">返回</button></div>
       <table>
-        <tr><td>邮箱</td><td>${esc(u.email)}</td><td>性别</td><td>${u.gender === 'male' ? '男' : '女'}</td></tr>
+        <tr><td>邮箱</td><td>${esc(u.email)}</td><td>状态</td><td>${u.banned ? '已封禁' : '正常'}</td></tr>
         <tr><td>邀请码</td><td>${esc(u.invite_code)}</td><td>被邀请人</td><td>${u.invited_by || '无'}</td></tr>
         <tr><td>注册时间</td><td>${esc(u.created_at)}</td><td>学校</td><td>${esc(u.school || '-')}</td></tr>
-        <tr><td>年级</td><td>${u.grade ? (u.grade % 100) + '级（' + u.grade + ' 年入学）' : '-'}</td><td>状态</td><td>${u.banned ? '已封禁' : '正常'}</td></tr>
       </table>
     </div>`);
 }

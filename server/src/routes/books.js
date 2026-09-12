@@ -6,7 +6,7 @@ const multer = require('multer');
 const { db, tx, getSettings } = require('../db');
 const { requireUser } = require('../auth');
 const { ok, fail, nowTs, clampInt } = require('../util');
-const { userPublic, gradeWindow, fuzzyHit } = require('../business');
+const { userPublic, fuzzyHit } = require('../business');
 const { pushToUser } = require('../ws');
 const { notifyFirstContact } = require('../mailer');
 
@@ -37,13 +37,6 @@ function bookCard(b) {
 // 价格排序：批量书 price_cents=0（只有文字价格），无法参与比价，固定排在最后
 function priceVal(b) { return b.price_cents > 0 ? b.price_cents : null; }
 
-// 毕业年级（每年 8 月 10 日统一下架，见 sweeps.js）不可再发布/上架书籍，
-// 防止年度清理后毕业同学又发新书（grade=0 的历史行启动时已迁移，不会被拦）
-function gradBlocked(me) {
-  return me.grade > 0 && me.grade <= gradeWindow().cutoff;
-}
-const GRAD_BLOCK_MSG = '毕业年级账号暂不能发布/上架书籍；若你仍在读（如五年制、研究生），请通过「我的-反馈」联系我们';
-
 // 图片上传人校验：仅本人
 function getOwnBookOrFail(req, res) {
   const b = db.prepare(`SELECT * FROM books WHERE id=?`).get(parseInt(req.params.id, 10));
@@ -57,7 +50,6 @@ function getOwnBookOrFail(req, res) {
 // ---------- 发布 ----------
 router.post('/', (req, res) => {
   const me = req.user;
-  if (gradBlocked(me)) return fail(res, GRAD_BLOCK_MSG);
   const title = String(req.body.title || '').trim();
   const course = String(req.body.course || '').trim();
   const note = String(req.body.note || '').trim();
@@ -172,7 +164,6 @@ const batchUpload = multer({
 });
 
 router.post('/batch', batchUpload.single('file'), (req, res) => {
-  if (gradBlocked(req.user)) return fail(res, GRAD_BLOCK_MSG);
   let titles;
   try { titles = JSON.parse(String(req.body.titles || '[]')); } catch (e) { titles = null; }
   if (!Array.isArray(titles)) return fail(res, '书名列表格式不正确');
@@ -365,7 +356,6 @@ router.post('/:id/status', (req, res) => {
   if (!b) return;
   const st = req.body.status;
   if (!BOOK_STATUS.includes(st)) return fail(res, '状态不正确');
-  if (st === 'on' && gradBlocked(req.user)) return fail(res, GRAD_BLOCK_MSG);
   if (st === 'sold') {
     // 标记已售出 = 从平台删除：书信息与封面文件一并清除，相关会话关闭（买家无法再发起联系）；
     // 聊天消息保留（争议凭证），会话列表显示"已删除的书"
@@ -375,6 +365,8 @@ router.post('/:id/status', (req, res) => {
     return ok(res, { id: b.id, status: 'sold' });
   }
   db.prepare(`UPDATE books SET status=? WHERE id=?`).run(st, b.id);
+  // 重新上架时把上架时间重置为现在：1 年自动下架（见 sweeps.js）从重新上架重新计
+  if (st === 'on') db.prepare(`UPDATE books SET created_at=? WHERE id=?`).run(new Date().toISOString(), b.id);
   ok(res, { id: b.id, status: st });
 });
 

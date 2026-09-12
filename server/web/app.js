@@ -233,12 +233,7 @@ function vLogin() {
     <div class="field"><label>验证码</label><div class="row"><input id="lg-code" class="grow" placeholder="6 位验证码"><button class="btn small" id="lg-send">获取验证码</button></div></div>
     <button class="btn" id="lg-btn">登录 / 注册</button>`;
   const step2 = `
-    <div class="field"><label>昵称（1-20 字）</label><input id="lg-nick" placeholder="给自己起个昵称"></div>
-    <div class="field"><label>年级</label><select id="lg-grade"><option value="">请选择年级</option></select>
-      <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 3px">每年 8 月 10 日，毕业年级的在售书籍会统一下架，避免无人处理的旧书影响大家浏览体验</div></div>
-    <div class="field"><label>性别</label><div class="chips" id="lg-gender">
-      <button class="chip" data-v="female">女</button><button class="chip" data-v="male">男</button></div>
-      <div class="muted" style="font-size:11px;line-height:1.5;margin:5px 0 1px">部分同学更倾向购买同性同学的二手书，性别仅作展示参考，建议如实填写哦</div></div>
+    <div class="field"><label>昵称（已自动生成，可以随便改）</label><input id="lg-nick" maxlength="20" placeholder="给自己起个昵称"></div>
     ${loginInvite ? `<div class="field"><label>邀请码（来自好友链接，选填）</label><input id="lg-invite" value="${esc(loginInvite)}" style="background:#e6f5ee"></div>` : ''}
     <div class="field"><label>注册协议</label><div class="sub" style="max-height:96px;overflow:auto;line-height:1.6">欢迎使用 WHU二手书市（"本平台"）。本平台仅为在校学生提供二手书信息展示与沟通渠道，不参与交易、不碰钱。请如实填写注册信息；严禁发布虚假违法信息；线下交易请当面验书、当面付款。提交注册即视为同意以上内容。</div>
     <div class="agree-row"><input type="checkbox" id="lg-agree" checked><label for="lg-agree">我已阅读并同意以上协议</label></div></div>
@@ -255,27 +250,13 @@ function vLogin() {
       <div class="center muted" style="margin-top:12px">售卖闲置教材，请当面验书、当面付款</div>
     </div>`;
 
-  // 第二步没有验证码行和登录按钮，绑定必须按步骤区分（否则 null.onclick 报错中断，
-  // 后面的年级下拉填充也不会执行——年级就会一直只有"请选择年级"一项）
+  // 第二步没有验证码行和登录按钮，绑定必须按步骤区分（否则 null.onclick 报错中断）
   if (loginStep === 1) bindCode('#lg-email', '#lg-send', 'login');
-  let gender = '';
-  document.querySelectorAll('#lg-gender .chip').forEach((c) => c.onclick = () => {
-    gender = c.dataset.v;
-    document.querySelectorAll('#lg-gender .chip').forEach((x) => x.classList.toggle('on', x === c));
-  });
 
-  // 年级下拉（注册第二步）：与服务端 gradeWindow 同一规则（8 月 10 日为新学年起点）
-  // 学校无需选择：都是 WHU，服务端注册时默认取唯一学校
+  // 昵称自动生成（朴素风格：书友 + 4 位数字），用户可直接改
   if (loginStep === 2) {
-    const now = new Date(), y = now.getFullYear(), md = (now.getMonth() + 1) * 100 + now.getDate();
-    const newTerm = md >= 810;
-    const g0 = newTerm ? y - 3 : y - 4, g1 = newTerm ? y : y - 1;
-    const gsel = $('#lg-grade');
-    if (gsel) gsel.innerHTML = '<option value="">请选择年级</option>' +
-      Array.from({ length: g1 - g0 + 1 }, (_, i) => {
-        const g = g1 - i; // 新年级在前
-        return `<option value="${g}">${g % 100}级（${g} 年入学）</option>`;
-      }).join('');
+    const nick = $('#lg-nick');
+    if (nick && !nick.value) nick.value = '书友' + String(Math.floor(1000 + Math.random() * 9000));
   }
 
   // 第一步：验证码校验 → 已注册登录 / 未注册进入第二步
@@ -295,25 +276,22 @@ function vLogin() {
         loginPending = d.pending;
         loginStep = 2;
         vLogin();
-        toast('还差最后一步：填写昵称就完成注册啦');
+        toast('还差最后一步：确认昵称就完成注册啦');
       }
     } catch (e) { toast(e.message); }
     btn.disabled = false;
   };
 
-  // 第二步：完成注册
+  // 第二步：完成注册（昵称已自动生成，仅需确认；性别/年级不再收集）
   const finish = $('#lg-finish');
   if (finish) finish.onclick = async () => {
     const nickname = ($('#lg-nick') || {}).value?.trim() || '';
-    const grade = +(($('#lg-grade') || {}).value || 0);
     if (!nickname) return toast('请填写昵称');
-    if (!grade) return toast('请选择年级');
-    if (!gender) return toast('请选择性别');
     if (!$('#lg-agree').checked) return toast('请勾选同意注册协议');
     finish.disabled = true;
     try {
       const d = await POST('/auth/complete-register', {
-        pending: loginPending, nickname, grade, gender, invite: loginInvite,
+        pending: loginPending, nickname, invite: loginInvite,
       });
       setToken(d.token); window._myId = d.user.id;
       toast('注册成功，欢迎加入！'); navTo('#/browse');
@@ -548,7 +526,7 @@ function batchFormHtml() {
     </div>
     <div class="field"><label>交易地点（必填，所有书共用）</label><input id="bt-loc" placeholder="当面交书的地点"></div>
     <div class="field"><label>价格描述（必填，1-60 字，所有书共用）</label><input id="bt-price" placeholder="例如：左边10r/本，右边20r/本"></div>
-    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。<br>⏳ 书籍上架满 1 年会自动下架，需要可重新上架。</div>
     <button class="btn" id="bt-go"></button>`;
 }
 function renderTitles() {
@@ -638,7 +616,7 @@ function singleFormHtml() {
       <div class="grow sub">拍清书名与封面更醒目</div></div>
       <input type="file" id="s-file" accept="image/*" class="hidden">
     </div></div>
-    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。</div>
+    <div class="muted" style="font-size:11.5px;line-height:1.6;margin:2px 2px 8px">💡 有买家第一次联系你时，会发送<b>邮件通知</b>提醒你，重要消息不错过。<br>⏳ 书籍上架满 1 年会自动下架，需要可重新上架。</div>
     <button class="btn" id="s-go">发布到书市</button>`;
 }
 let sellCond = '';
@@ -1237,7 +1215,7 @@ async function vMe() {
     <div class="card seller-card">
       <div class="avatar" id="me-avatar" onclick="changeAvatar()">${me.avatar ? `<img src="/files/avatars/${me.id}.jpg">` : esc(me.nickname[0])}</div>
       <div class="grow"><b style="font-size:16px">${esc(me.nickname)}</b>
-        <div class="sub">${me.gender === 'male' ? '男' : '女'} · ${esc(me.email)}</div>
+        <div class="sub">${esc(me.email)}</div>
         <div class="sub">${esc(me.school || '')}</div></div>
       <button class="btn small ghost" onclick="changeAvatar()">换头像</button>
     </div>
@@ -1320,7 +1298,7 @@ async function vUser(hash) {
     <div class="card seller-card">
       <div class="avatar">${u.avatar ? `<img src="/files/avatars/${u.id}.jpg">` : esc(u.nickname[0])}</div>
       <div class="grow"><b style="font-size:16px">${esc(u.nickname)}</b>
-        <div class="sub">${u.gender === 'male' ? '男' : '女'} · ${esc(u.school || '')}</div>
+        <div class="sub">${esc(u.school || '')}</div>
         <div class="sub">注册 ${fmtTime(u.created_at)}</div></div>
     </div>
     <div class="row" style="margin:0 2px 10px">

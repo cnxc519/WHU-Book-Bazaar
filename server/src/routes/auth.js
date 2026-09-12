@@ -8,7 +8,6 @@ const { db, getSettings } = require('../db');
 const { sendCode, verifyCode } = require('../mailer');
 const { signUserToken, requireUser } = require('../auth');
 const { cfg } = require('../config');
-const { gradeWindow } = require('../business');
 const { ok, fail, isEmail, inviteCode, makeLimiter, cleanupLimiter, nowTs } = require('../util');
 const { pushToUser } = require('../ws');
 
@@ -41,14 +40,12 @@ router.post('/register', (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase();
   const code = String(req.body.code || '').trim();
   const nickname = String(req.body.nickname || '').trim();
-  const gender = req.body.gender === 'male' ? 'male' : req.body.gender === 'female' ? 'female' : null;
+  // 性别/年级不再收集：仅兼容旧客户端显式传参，缺省走默认值
+  const gender = req.body.gender === 'male' ? 'male' : 'female';
   const inv = String(req.body.invite_code || '').trim().toUpperCase();
 
   if (!isEmail(email)) return fail(res, '邮箱格式不正确');
-  if (!gender) return fail(res, '请选择性别');
-  const grade = parseInt(req.body.grade, 10);
-  const gw = gradeWindow();
-  if (!Number.isFinite(grade) || grade < gw.min || grade > gw.max) return fail(res, '请选择年级');
+  const grade = parseInt(req.body.grade, 10) || 0;
   if (nickname.length < 1 || nickname.length > 20 || /[\x00-\x1f]/.test(nickname)) return fail(res, '昵称需为 1-20 个字符');
   // 学校不传/无效时默认取唯一学校（当前只有武大，网页注册已不展示学校选择）
   let schoolId = parseInt(req.body.school_id, 10);
@@ -141,7 +138,8 @@ router.post('/complete-register', (req, res) => {
   const existed = db.prepare(`SELECT id FROM users WHERE email=?`).get(email);
   if (existed) return ok(res, { already: true, token: signUserToken(existed.id) });
   const nickname = String(req.body.nickname || '').trim();
-  const gender = req.body.gender === 'male' ? 'male' : req.body.gender === 'female' ? 'female' : null;
+  // 性别/年级/学校都不再收集：性别走默认值，学校取唯一学校，年级留 0
+  const gender = req.body.gender === 'male' ? 'male' : 'female';
   const inv = String(req.body.invite || '').trim().toUpperCase();
   if (nickname.length < 1 || nickname.length > 20) return fail(res, '昵称需为 1-20 个字符');
   // 学校不传/无效时默认取唯一学校（当前只有武大，网页注册已不展示学校选择）
@@ -150,10 +148,6 @@ router.post('/complete-register', (req, res) => {
     schoolId = (db.prepare(`SELECT id FROM schools ORDER BY id LIMIT 1`).get() || {}).id || 0;
   }
   if (!schoolId) return fail(res, '暂无可用学校，请联系管理员');
-  if (!gender) return fail(res, '请选择性别');
-  const grade = parseInt(req.body.grade, 10);
-  const gw = gradeWindow();
-  if (!Number.isFinite(grade) || grade < gw.min || grade > gw.max) return fail(res, '请选择年级');
   let invitedBy = null;
   if (inv) {
     const inviter = db.prepare(`SELECT id,nickname FROM users WHERE invite_code=? AND id!=0`).get(inv);
@@ -162,8 +156,8 @@ router.post('/complete-register', (req, res) => {
   }
   let codeStr;
   do { codeStr = inviteCode(); } while (db.prepare(`SELECT id FROM users WHERE invite_code=?`).get(codeStr));
-  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,grade,gender,invite_code,invited_by,created_at) VALUES(?,?,?,?,?,?,?,?)`)
-    .run(email, nickname, schoolId, grade, gender, codeStr, invitedBy, new Date().toISOString());
+  const r = db.prepare(`INSERT INTO users(email,nickname,school_id,grade,gender,invite_code,invited_by,created_at) VALUES(?,?,?,0,?,?,?,?)`)
+    .run(email, nickname, schoolId, gender, codeStr, invitedBy, new Date().toISOString());
   const uid = r.lastInsertRowid;
   if (invitedBy) {
     db.prepare(`INSERT INTO notifications(user_id,type,title,body,created_at) VALUES(?,?,?,?,?)`)
