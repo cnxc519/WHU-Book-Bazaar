@@ -322,7 +322,7 @@ function vGuide() {
       <div class="gd-item"><b>卖书</b><span>拍照上架，一摞书一张照 AI 批量识别；上架满 1 年自动下架，可重新上架</span></div>
       <div class="gd-item"><b>心愿单</b><span>看看大家在找什么书——有货就联系 TA，生意自己送上门</span></div>
     </div>
-    <div class="gd-tip gd-rise" style="animation-delay:.36s">💬 所有买卖沟通都在「消息」里；有人联系你会邮件提醒<br>🤝 平台不碰钱：见面当面验书、当面付款</div>
+    <div class="gd-tip gd-rise" style="animation-delay:.36s">💬 所有买卖沟通都在「消息」里；首次联系你会邮件提醒<br>🤝 平台不碰钱：见面当面验书、当面付款</div>
     <button class="btn gd-go gd-rise" style="animation-delay:.48s" id="guide-go">开始逛书市 →</button>
     <div class="center muted gd-rise" style="animation-delay:.56s;font-size:11.5px;margin-top:10px">「消息 / 邀请 / 我的」两个模式通用</div>`;
   $('#guide-go').onclick = () => navTo('#/browse');
