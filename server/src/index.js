@@ -71,8 +71,8 @@ app.get('/dl/latest', (req, res) => {
   res.sendFile(apkPath);
 });
 // 推广物料：落地页引用的 App 图标与邀请海报（随代码分发）
-app.get('/appicon.png', (req, res) => res.sendFile(path.join(__dirname, 'appicon.png')));
-app.get('/poster.png', (req, res) => res.sendFile(path.join(__dirname, 'poster.png')));
+app.get('/appicon.png', (req, res) => { res.setHeader('Cache-Control', 'public, max-age=3600'); res.sendFile(path.join(__dirname, 'appicon.png')); });
+app.get('/poster.png', (req, res) => { res.setHeader('Cache-Control', 'public, max-age=3600'); res.sendFile(path.join(__dirname, 'poster.png')); });
 
 app.get('/d', (req, res) => {
   const { getSettings } = require('./db');
