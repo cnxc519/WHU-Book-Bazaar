@@ -64,3 +64,4 @@ testenv/bookid.txt
 Thumbs.db
 desktop.ini
 server/config.json.bak
+server/src/appicon_origin.png
